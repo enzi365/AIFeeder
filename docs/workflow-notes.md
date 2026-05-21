@@ -179,6 +179,30 @@ The append-only `conversation.md` + the mutable `state.md` form a deliberate spl
 
 ---
 
+## Ship checkpoint — Claude-initiated state + commit prep + compact
+
+When Claude judges the conversation has reached a natural pause that *also* warrants both a `state.md` refresh and a `/compact`, Claude runs this protocol without waiting to be asked:
+
+1. **Surface the checkpoint.** "I think we're at a good checkpoint — proposing: state refresh, commit prep, then /compact."
+2. **Refresh `state.md` directly** via the `/state` skill (Claude writes it). No need for the user to type `/state`.
+3. **Stage the right files** for this project: all source code touched + `docs/*.md` **except** `docs/my-log.md` and `docs/handoff.md`. Show `git status` so the user sees what's staged.
+4. **Write the commit message** following recent commit-message style in `git log`. Do **NOT** commit — the user reviews the staged diff first.
+5. **Hand off to the user with:**
+   - "Review the staged diff. When happy, `git commit` and push."
+   - **Suggested `/compact` hint** — pre-written, ready to paste: `/compact preserve <load-bearing things specific to current work>`. Tailored each time to what *this* session was building.
+6. **Remind to `/compact`** after the user confirms the commit + push lands. (If the user pushes silently, infer from their next message; don't nag if they pivot to something else.)
+
+**Why this lives here, not just in CLAUDE.md:** the protocol is a *collaboration pattern*, not a rule. CLAUDE.md tells Claude to follow the conversation-log convention; this section captures the broader rhythm of "Claude proposes the checkpoint, user controls the commit + push." Don't conflate the two.
+
+**When to fire it:**
+
+- After a logical chunk of work (a feature lands, a scope-defining decision settles, a scaffold completes).
+- Before a long-uninterrupted build phase (clear headroom up front).
+- When context starts feeling heavy — Claude responding slower or losing track of older details.
+- **Not** mid-flight in a single coherent task. Wait for the natural seam.
+
+---
+
 ## Subagents
 
 Subagents are isolated Claude instances spawned for one task. Their context doesn't pollute the main thread; only their summary comes back.

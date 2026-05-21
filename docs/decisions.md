@@ -199,4 +199,36 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 ---
 
-_Last updated: 2026-05-20 — added local-only single-user decision + defer-adaptive-prompting decision; marked subscription-model decision dormant for v1._
+## 2026-05-21 — Add `purpose` + `read_time_estimate` to AI summary schema
+
+**Status:** Accepted
+
+**Decision:** The AI summary now produces two additional fields alongside the existing `relevance_verdict` / `confidence` / `relevance_reason` / `content_type_tag` / `key_points`:
+- **`purpose`** — one short sentence describing what the *author* is trying to do (in author-voice). Orthogonal to `relevance_reason` (which is *why the user should care*).
+- **`read_time_estimate`** — enum `quick` (<5 min) / `medium` (5–15 min) / `long` (>15 min). Inferred from cues when only an excerpt is provided.
+
+**Why:** First A-checkpoint of real outputs showed `verdict + confidence + reason + key_points` was almost enough but two decision-relevant questions weren't answered: *what is this piece doing* (author intent, separate from user-fit) and *how much of my time does it cost*. The second is critical for the mindful-consumption mission — verdict tells you *if*, time bucket tells you *if-now*.
+
+**Tradeoff:** Two extra fields = slightly more output tokens, slightly more screen real estate in the list view, slight added risk that `purpose` and `relevance_reason` drift toward redundancy. Rejected `target_audience` for exactly that redundancy reason (overlaps heavily with `relevance_reason`).
+
+**Schema:** `summaries` table gets `purpose TEXT` + `read_time_estimate TEXT CHECK (… IN ('quick','medium','long'))`. Both nullable for forward-flex; function-call schema marks both required so the model fills them.
+
+**Refs:** decisions.md → *2026-05-20 — Single general AI summary prompt* (this is the same prompt — fields added, not separated by content type); conversation → [2026-05-20_b670.md](conversation/2026-05-20_b670.md); state.md → *Recent decisions › AI prompt design (locked)* will need an update.
+
+---
+
+## 2026-05-21 — Add orthogonal `style_tag` alongside `content_type_tag`
+
+**Status:** Accepted
+
+**Decision:** Add a second tag field, `style_tag`, with a fixed 7-value vocabulary: `technical-deep-dive`, `explainer`, `opinionated`, `conversational`, `reflective`, `news-brief`, `narrative`. The existing `content_type_tag` continues to capture *format* (essay / tutorial / news / etc.); `style_tag` captures *style*. Both required, both single-valued — total of two tags surfaced per item.
+
+**Why:** During the A-checkpoint the user wanted "up to 2 categories" hinting at "format and the style." Considered three shapes: (1) extend `content_type_tag` to an array of 1–2, (2) add an orthogonal `style_tag`, (3) collapse to one mixed `tags[]` array. Chose (2) because format and style are genuinely orthogonal (an essay can be technical-deep-dive *or* opinionated *or* reflective) and an explicit two-field shape keeps the taxonomy clean — option (1) would produce ambiguous arrays like `[essay, opinionated]` mixing the two axes; option (3) collapses signal that's actually distinct.
+
+**Tradeoff:** Two enums to maintain instead of one. Slight risk of the model picking a style that doesn't fit the format (e.g. `news-brief` style on a tutorial format) — accepted; we'll watch for it in practice. Total summary now has *three* classification fields (content_type_tag, style_tag, read_time_estimate) plus verdict / confidence / reason / purpose / key_points — at the edge of "too many fields" for the list view. UX brief is the moment to decide what surfaces in the list vs. the detail view.
+
+**Refs:** decisions.md → *2026-05-21 — Add `purpose` + `read_time_estimate`* (same A-checkpoint, same prompt); conversation → [2026-05-20_b670.md](conversation/2026-05-20_b670.md).
+
+---
+
+_Last updated: 2026-05-21 — added `style_tag` orthogonal to `content_type_tag` (7-value style vocabulary)._

@@ -41,6 +41,10 @@ CREATE TABLE IF NOT EXISTS summaries (
     confidence REAL NOT NULL CHECK (confidence >= 0.0 AND confidence <= 1.0),
     relevance_reason TEXT,
     content_type_tag TEXT,
+    style_tag TEXT,
+    purpose TEXT,
+    read_time_estimate TEXT
+        CHECK (read_time_estimate IS NULL OR read_time_estimate IN ('quick', 'medium', 'long')),
     key_points_json TEXT,
     chapter_index_json TEXT,
     model_used TEXT NOT NULL,

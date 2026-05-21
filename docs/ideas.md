@@ -183,6 +183,23 @@ This is the parking lot, not a backlog — order doesn't imply priority. When so
 
 ---
 
+## Two-stage AI pipeline — classifier-then-summarizer
+
+**Idea:** Split the single AI call into two stages: (1) a lightweight classifier that decides relevance verdict + confidence + content_type_tag from title + first ~500 chars, and (2) a heavier summarizer that only runs when the classifier returns `yes` or `maybe` (or `no` with low confidence — i.e. the model isn't sure).
+
+**Intention / purpose:** Better filtering quality and lower cost. The classifier can be small/cheap and aggressive; the summarizer only spends tokens on content the user might actually want. Also opens the door to per-content-type summarizer prompts (see [Content-type-adaptive prompt design](#content-type-adaptive-prompt-design)).
+
+**Halfway considerations:**
+- Pairs naturally with content-type-adaptive prompting — classifier picks the type, summarizer routes by type.
+- Risk: a bad classifier hides good content. Audit by occasionally running the summarizer on `no` items and checking whether the user would have wanted them. (Sample, don't full-shadow — that defeats the cost savings.)
+- Two API calls per item adds latency on the manual-refresh path. Mitigation: parallelize, or only stage-2 the items the user expands.
+- The v1 single-call prompt already produces `confidence` — that's the natural seam to split on later. No schema change needed.
+- **Right trigger to revisit:** when (a) the v1 single prompt is producing visibly poor filtering on some content type, or (b) per-refresh cost grows past the ~$2.50/mo budget as sources expand.
+
+**Refs:** decisions.md → *2026-05-20 — Single general AI summary prompt; defer content-type-adaptive prompting*; conversation → 2026-05-20_b670.md.
+
+---
+
 ## Public distribution (auth, multi-tenancy, billing, hosting)
 
 **Idea:** Make AIFeeder available beyond the builder — friends, paying users, public. Requires adding back: user accounts + auth, multi-tenancy on the schema, subscription billing, hosting infrastructure, ToS / privacy policy.
@@ -204,4 +221,4 @@ This is the parking lot, not a backlog — order doesn't imply priority. When so
 
 ---
 
-_Last updated: 2026-05-20 — added [content-type-adaptive prompt design] and [public distribution] following the local-only scope cut._
+_Last updated: 2026-05-21 — added [two-stage classifier-then-summarizer] alongside the v1 single-call prompt._
