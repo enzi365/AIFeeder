@@ -22,6 +22,12 @@
     --accent-neutral: #8C6E4A;    /* umber: news / link-blog / other */
     --accent-neutral-soft: #D9C7AC;
 
+    /* Card verdict halves: positive (sage) for "for you", warm (sienna) for caution. */
+    --accent-positive: #6F8B4F;
+    --accent-positive-soft: #C9D5B0;
+    --accent-positive-bg: rgba(111, 139, 79, 0.07);
+    --accent-caution-bg: rgba(199, 123, 74, 0.07);
+
     --note-yellow: #F4D58D;
     --note-yellow-soft: #FAE9BF;
 

@@ -55,6 +55,26 @@ def _cmd_preview(per_source: int = 3) -> None:
     print(f"\n=== Preview total cost: ${total_cost:.4f} ===")
 
 
+def _cmd_refresh(
+    per_source: int,
+    source_id: int | None,
+    dry_run: bool,
+    verbose: bool,
+) -> None:
+    """Fetch sources, summarize new pending items, persist. Idempotent."""
+    from .refresh import run_refresh
+
+    if not dry_run and not os.environ.get("OPENAI_API_KEY"):
+        raise SystemExit("OPENAI_API_KEY not set. Copy .env.example to .env and fill it in.")
+    apply_schema()
+    run_refresh(
+        per_source=per_source,
+        source_id=source_id,
+        dry_run=dry_run,
+        verbose=verbose,
+    )
+
+
 def _cmd_serve(host: str, port: int, reload: bool) -> None:
     """Run the local FastAPI web UI."""
     import uvicorn
@@ -91,7 +111,23 @@ def main() -> None:
         "--per-source", type=int, default=3,
         help="Items to summarize per source (default 3)",
     )
-    sub.add_parser("refresh", help="Fetch sources, summarize, persist to DB")
+    refresh = sub.add_parser("refresh", help="Fetch sources, summarize, persist to DB")
+    refresh.add_argument(
+        "--per-source", type=int, default=10,
+        help="Max pending items to summarize per source (default 10)",
+    )
+    refresh.add_argument(
+        "--source-id", type=int, default=None,
+        help="Limit to a single source by id (default: all)",
+    )
+    refresh.add_argument(
+        "--dry-run", action="store_true",
+        help="Fetch + parse + show what would be ingested. No AI, no DB writes.",
+    )
+    refresh.add_argument(
+        "--quiet", action="store_true",
+        help="Print final summary only. Default is verbose per-item output.",
+    )
     serve = sub.add_parser("serve", help="Run the local web UI")
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
@@ -108,7 +144,12 @@ def main() -> None:
     elif args.cmd == "preview":
         _cmd_preview(per_source=args.per_source)
     elif args.cmd == "refresh":
-        raise NotImplementedError("Implementing after preview validates the prompt")
+        _cmd_refresh(
+            per_source=args.per_source,
+            source_id=args.source_id,
+            dry_run=args.dry_run,
+            verbose=not args.quiet,
+        )
     elif args.cmd == "serve":
         _cmd_serve(host=args.host, port=args.port, reload=not args.no_reload)
     elif args.cmd == "seed-fake":

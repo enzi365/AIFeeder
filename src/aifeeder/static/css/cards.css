@@ -68,13 +68,28 @@
 
 .card.shape-text .title { font-size: 1.3rem; }
 
-.card .why {
+.card .why-reason,
+.card .why-caution {
     font-family: var(--font-body-sans);
     font-style: italic;
     color: var(--ink-soft);
     font-size: 0.95rem;
     line-height: 1.5;
-    margin: 0.4rem 0 0;
+    padding: 0.35rem 0.55rem;
+    border-left: 3px solid;
+    margin: 0;
+}
+
+.card .why-reason {
+    border-left-color: var(--accent-positive-soft);
+    background: var(--accent-positive-bg);
+    margin-top: 0.4rem;
+}
+
+.card .why-caution {
+    border-left-color: var(--accent-warm-soft);
+    background: var(--accent-caution-bg);
+    margin-top: 0.15rem;
 }
 
 .card .meta {

@@ -3,8 +3,11 @@
     <span class="accent-stripe" aria-hidden="true"></span>
 
     <h2 class="title">{{ item.title or "[untitled]" }}</h2>
-    {% if item.relevance_reason %}
-    <p class="why">{{ item.relevance_reason }}</p>
+    {% if item.reason_main %}
+    <p class="why-reason">{{ item.reason_main }}</p>
+    {% endif %}
+    {% if item.reason_caution %}
+    <p class="why-caution">{{ item.reason_caution }}</p>
     {% endif %}
     <div class="meta">
         <span class="read-pill">{{ item.read_time_estimate or "—" }}</span>

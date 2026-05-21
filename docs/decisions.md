@@ -385,3 +385,23 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 ---
 
 _Last updated: 2026-05-21 — 6 A-entries from the browser-check + UI-iteration day (thumbs supersedes arrows, plain-block supersedes sticky-note, sans-serif body refines typography lock, apple verdict indicators, in-text highlighting B→A escalation, **sources editable from UI as first UI-→-DB write path**)._
+
+---
+
+## 2026-05-22 — Home card splits the "maybe" verdict into stacked green/orange blocks
+
+**Status:** Accepted
+
+**Decision:** On the home-page card, the AI's `relevance_reason` is rendered as two stacked, **labelless** blocks differentiated only by color and left-border accent. The positive half ("Worth a shot for X" / "Worth reading if X") gets a **soft sage left-border (`--accent-positive-soft #C9D5B0`) + faint sage bg tint**; the caution half ("although Y" / "but Y" / "though Y") gets a **soft sienna left-border (`--accent-warm-soft`) + faint sienna bg tint**. The locked AI tone phrasings are preserved verbatim — the stems ("Worth a shot for…", "although…") are kept, just visually painted. "Yes" verdicts render only the green block; "maybe" verdicts get both stacked. The split happens client-side at render time via `_split_reason()` in [routes.py](../src/aifeeder/web/routes.py), splitting on a case-insensitive regex `\s+(although|but|though)\s+`.
+
+**Why:** User asked for a visual split that separates "what's pulling this in" from "what you should know" — the mindful-feed mission benefits from making the caution as first-class as the recommendation (anti-clickbait: the AI is allowed to hedge visibly). Picked labelless because color + position is enough signal once the convention is visible — a "For you / Heads up" label scheme was offered but rejected as too explicit for what's already a small card. Sage chosen specifically because the existing palette (`warm/cool/neutral` = sienna/teal/umber) had no green; the warm cream card background (`#FAF1E2`) plus a desaturated sage (`#6F8B4F` derived family) feels vintage-aligned rather than tacked-on.
+
+**Tradeoff:** Two costs taken on:
+- **Brittle splitter:** Client-side regex on `(although|but|though)` works for 24/24 sampled outputs but assumes the AI keeps using one of those three hinge words. A model swap or prompt tweak that introduces "however" / "though arguably" / "yet" would silently produce a single green block with no caution. Mitigation deferred: revisit by adding an explicit `reason_caution` field to the OpenAI tool-call schema in [ai.py](../src/aifeeder/ai.py), which would make the split structural rather than parsed. Not done now because it's a v1.x cleanup, not a v1 blocker.
+- **Locked phrasing dependency on the cards:** The "Worth a shot for…although…" voice now does double duty (console output + visual split anchor). If a future tone refresh changes those stems without also updating the splitter, the cards quietly degrade. Worth checking together.
+
+**Refs:** ideas.md → *(none deferred — alternative options "For you/Heads up labels" and "icon-only" were rejected outright, not parked)*; conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 reason-split turn); engineering-decisions.md → *2026-05-22 — `aifeeder refresh` implementation* (sibling small turn — both shipped same session, refresh first then reason-split as the immediate browser-check tweak).
+
+---
+
+_Last updated: 2026-05-22 — Home card reason-split lands as A-decision (labelless sage/sienna stacked blocks; locked AI voice preserved verbatim; sage added to the palette as `--accent-positive*`)._

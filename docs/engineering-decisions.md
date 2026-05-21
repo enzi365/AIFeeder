@@ -320,3 +320,24 @@ Resolved during `/plan-feature wire refresh subcommand`. User agreed to all 5 ar
 ---
 
 _Last updated: 2026-05-22 — `aifeeder refresh` plan-feature open-Q resolutions cluster (5 tradeoffs + 7 open-Q answers + post-refresh scope ordering). No code yet — locks the shape before implementation starts._
+
+---
+
+## 2026-05-22 — `aifeeder refresh` implementation shipped (small follow-on choices)
+
+The 10-step plan above landed in `src/aifeeder/refresh.py` + `src/aifeeder/cli.py`. Smoke-test result: 4 items processed across 2 sources at $0.0015 total, dedup verified two ways (insert-side via `--dry-run` showing 490 already-known; summarize-side via re-run picking 2 fresh pending items rather than re-summarizing). UI integration confirmed by curling `/home` — all 3 feed-eligible real items render with locked tone phrasings ("Skip — this focuses…", "Worth a shot for X although Y").
+
+A handful of micro-choices made during implementation that weren't pre-specified:
+
+- **Transient lookup extended to `openai.APIConnectionError` and `openai.APITimeoutError`.** Plan only listed `RateLimitError` + non-OpenAI URLError/socket.timeout under transient; the two OpenAI network classes are obviously transient and the SDK raises them on flaky connections / read timeouts. Adding them costs nothing and prevents silently turning a network blip into a permanent failure.
+- **`process_source` documented as "never raises" — all per-source exceptions caught.** The plan implied this (return a `SourceResult` per source) but didn't spell out the contract. Locking it in the docstring so a future caller can rely on it for the for-loop in `run_refresh`.
+- **DB hygiene: moved `aifeeder.db` → `aifeeder.db.seedfake.bak` instead of `rm`.** The locked plan said "delete DB + re-init"; chose backup-rather-than-delete for the smoke-test transition so the seed-fake state stays inspectable. One-line operational deviation, not a re-decision — `rm aifeeder.db.seedfake.bak` is fine whenever.
+- **Timestamps use Python-side `datetime.utcnow().isoformat(timespec="seconds")` rather than SQL `CURRENT_TIMESTAMP`.** Matches the format that schema's `TIMESTAMP DEFAULT CURRENT_TIMESTAMP` produces ('YYYY-MM-DDTHH:MM:SS'). Mostly cosmetic — either would work — but Python-side avoids a second round-trip when bundling multiple updates.
+
+**User response:** pending (just shipped; will surface in next browser-check / push round).
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 implementation turn); plan-cluster above (same file, prior H2).
+
+---
+
+_Last updated: 2026-05-22 — `aifeeder refresh` shipped. App now runs on real persisted RSS data; UI integration confirmed via /home curl. Seed-fake DB backed up to `aifeeder.db.seedfake.bak`._

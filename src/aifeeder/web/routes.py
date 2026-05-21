@@ -6,6 +6,7 @@ stateless echoes for v1 (real schema lands with `refresh`).
 """
 import html
 import json
+import re
 import sqlite3
 
 from fastapi import HTTPException, Request, Form
@@ -43,6 +44,23 @@ def _shape_for(tag: str | None) -> str:
     return "square"
 
 
+# Splits a "maybe" reason on the first hinge word ("although"/"but"/"though"),
+# preserving the hinge token in the caution half so the locked voice survives.
+# "yes" reasons have no hinge → caution stays None.
+_REASON_HINGE_RE = re.compile(r"\s+(although|but|though)\s+", re.IGNORECASE)
+
+
+def _split_reason(text: str | None) -> tuple[str | None, str | None]:
+    if not text:
+        return None, None
+    m = _REASON_HINGE_RE.search(text)
+    if not m:
+        return text.strip(), None
+    main = text[:m.start()].strip().rstrip(",")
+    caution = text[m.start():].strip()
+    return main, caution
+
+
 def _enrich_item(item: dict) -> dict:
     """Add view-only fields: palette family, card shape, parsed key_points, fav flag."""
     item["palette"] = _palette_for(item.get("content_type_tag"))
@@ -50,6 +68,7 @@ def _enrich_item(item: dict) -> dict:
     raw_kp = item.get("key_points_json")
     item["key_points"] = json.loads(raw_kp) if raw_kp else []
     item["is_favourite"] = fakes.is_favourite(item["id"])
+    item["reason_main"], item["reason_caution"] = _split_reason(item.get("relevance_reason"))
     return item
 
 
