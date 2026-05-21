@@ -3,7 +3,10 @@
 <aside class="sidebar">
     <div class="sidebar-top">
         <div class="sidebar-icons">
-            <button class="icon-btn plus" type="button" title="Add source">{{ ico.plus() }}</button>
+            <button class="icon-btn plus" type="button" title="Add source"
+                    hx-get="/sources/new"
+                    hx-target="#modal-slot"
+                    hx-swap="innerHTML">{{ ico.plus() }}</button>
             <button class="icon-btn" type="button" title="Settings">{{ ico.gear() }}</button>
             <button class="icon-btn" type="button" title="Profile">{{ ico.avatar_icon() }}</button>
         </div>

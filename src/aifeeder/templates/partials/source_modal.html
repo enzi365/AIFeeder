@@ -1,23 +1,33 @@
 {% import "_icons.html" as ico %}
+{% set is_add = not source.id %}
 <div class="modal-backdrop" data-modal-backdrop>
-    <div class="modal-card" role="dialog" aria-label="Edit source" aria-modal="true">
+    <div class="modal-card" role="dialog"
+         aria-label="{{ 'Add source' if is_add else 'Edit source' }}" aria-modal="true">
         <button class="modal-close" type="button" data-modal-close title="Close">
             {{ ico.close_x() }}
         </button>
-        <h2 class="modal-title">{{ source.name }}</h2>
+        <h2 class="modal-title">{{ 'Add a source' if is_add else source.name }}</h2>
 
         {% if error %}
         <div class="modal-error" role="alert">{{ error }}</div>
         {% endif %}
 
-        <form hx-post="/sources/{{ source.id }}"
+        <form hx-post="{{ '/sources' if is_add else '/sources/' ~ source.id }}"
               hx-target="#modal-slot"
               hx-swap="innerHTML"
               class="modal-form">
+            {% if is_add %}
+            <label class="modal-field">
+                <span class="modal-label">Name</span>
+                <input type="text" name="name" value="{{ source.name or '' }}"
+                       placeholder="e.g. Simon Willison" autocomplete="off" required>
+            </label>
+            {% endif %}
+
             <label class="modal-field">
                 <span class="modal-label">Link / URL</span>
                 <input type="url" name="url" value="{{ source.url or '' }}"
-                       placeholder="https://…" autocomplete="off">
+                       placeholder="https://…" autocomplete="off"{% if is_add %} required{% endif %}>
             </label>
 
             <div class="modal-field">
@@ -25,12 +35,12 @@
                 <span class="modal-hint">
                     What do you value from this source? What would you rather not receive?
                 </span>
-                <textarea name="why" rows="5">{{ source.why or '' }}</textarea>
+                <textarea name="why" rows="5"{% if is_add %} required{% endif %}>{{ source.why or '' }}</textarea>
             </div>
 
             <div class="modal-actions">
                 <button type="button" class="modal-cancel-btn" data-modal-close>cancel</button>
-                <button type="submit" class="modal-save-btn">save</button>
+                <button type="submit" class="modal-save-btn">{{ 'add' if is_add else 'save' }}</button>
             </div>
         </form>
     </div>

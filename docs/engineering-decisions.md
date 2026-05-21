@@ -341,3 +341,26 @@ A handful of micro-choices made during implementation that weren't pre-specified
 ---
 
 _Last updated: 2026-05-22 — `aifeeder refresh` shipped. App now runs on real persisted RSS data; UI integration confirmed via /home curl. Seed-fake DB backed up to `aifeeder.db.seedfake.bak`._
+
+---
+
+## 2026-05-22 — Source-add UI shipped (orange `+` button now functional)
+
+Phase-3 work from the locked post-refresh order: wired the sidebar `+` button to a real DB-write flow, mirroring the source-edit pattern. New `insert_source(name, url, why)` in [web/writes.py](../src/aifeeder/web/writes.py); two new routes `GET /sources/new` + `POST /sources` in [web/routes.py](../src/aifeeder/web/routes.py); the existing [partials/source_modal.html](../src/aifeeder/templates/partials/source_modal.html) was extended (one shared template) to render in add-mode when `source.id` is falsy. Smoke-tested end-to-end via curl — all five paths green (GET new modal, POST empty → modal-error, POST duplicate URL → modal-error, POST valid → 204 + HX-Refresh:true with row created, GET edit unchanged).
+
+Small choices made during implementation:
+
+- **One shared modal template** (not a separate `source_add_modal.html`). Why: avoids drift between two markup blocks that are 90% identical. Cost: a couple `{% if is_add %}` branches in the template. Set `is_add = not source.id` at the top so the branches read cleanly.
+- **`source_type` hardcoded to `'rss'`** in `insert_source`. Why: YouTube ingestion ships in phase 4 with its own pipeline; adding a no-op `<select>` now is premature UI. When YouTube lands, the toggle goes in alongside the yt-dlp work.
+- **All three fields required, one generic modal-error.** Server-side: trim then check non-empty before touching the DB. Client-side: HTML5 `required` for per-field UX (browser hints which field is missing before submit). The generic "All fields are required." server error covers the JS-disabled case + paranoia.
+- **Field order: Name → URL → Why** (reading order for a new thing). The edit modal hides Name (it's already in the H2 title), so this is the first time the input appears anywhere in the UI.
+- **Route ordering**: literal `POST /sources` registered BEFORE `POST /sources/{source_id}` per the Starlette route-order gotcha already documented in state.md. Same precaution for `GET /sources/new` vs `GET /sources/{source_id}/edit` — different shapes, but registered first defensively.
+- **Success behavior: `HX-Refresh: true`** (matches the edit pattern). Why: the new source needs to appear in the sidebar source-list immediately. A full reload is the simplest correct answer; partial-swap into the sidebar would couple this route to the sidebar template.
+
+**User response:** pending (will surface in next browser-check round).
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 source-add UI turn); decisions.md → *2026-05-21 — Sources are user-editable from the UI* (open follow-on (a) — add-source modal pattern reuse — now resolved by this entry).
+
+---
+
+_Last updated: 2026-05-22 — Source-add UI shipped. Phase 3 of the locked post-refresh order complete. Next: real-world test + phase 4 (YouTube/Struthless)._

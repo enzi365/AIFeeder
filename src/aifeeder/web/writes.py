@@ -22,3 +22,20 @@ def update_source(source_id: int, url: str, why: str) -> bool:
         )
         conn.commit()
         return cur.rowcount > 0
+
+
+def insert_source(name: str, url: str, why: str) -> int:
+    """Insert a new RSS source. Returns the new source id.
+
+    source_type is hardcoded to 'rss' in v1; the YouTube ingestion path
+    ships in phase 4 with its own toggle. Raises sqlite3.IntegrityError
+    on duplicate url (UNIQUE constraint) — caller re-renders the modal
+    with a friendly message.
+    """
+    with closing(connect()) as conn:
+        cur = conn.execute(
+            "INSERT INTO sources (name, url, source_type, why) VALUES (?, ?, 'rss', ?)",
+            (name.strip(), url.strip(), why.strip()),
+        )
+        conn.commit()
+        return cur.lastrowid

@@ -317,6 +317,50 @@ async def favourite_toggle(request: Request, item_id: int):
     )
 
 
+# ---------- source add (real DB write) ----------
+# Registered BEFORE the source-edit routes so the literal `/sources/new`
+# and `/sources` paths win over the `{source_id}` template matches.
+
+@app.get("/sources/new", response_class=HTMLResponse)
+async def source_add_modal(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "partials/source_modal.html",
+        {"source": {"id": None, "name": "", "url": "", "why": ""}},
+    )
+
+
+@app.post("/sources", response_class=HTMLResponse)
+async def source_create(
+    request: Request,
+    name: str = Form(""),
+    url: str = Form(""),
+    why: str = Form(""),
+):
+    name_clean, url_clean, why_clean = name.strip(), url.strip(), why.strip()
+    if not (name_clean and url_clean and why_clean):
+        return templates.TemplateResponse(
+            request,
+            "partials/source_modal.html",
+            {
+                "source": {"id": None, "name": name_clean, "url": url_clean, "why": why_clean},
+                "error": "All fields are required.",
+            },
+        )
+    try:
+        writes.insert_source(name_clean, url_clean, why_clean)
+    except sqlite3.IntegrityError:
+        return templates.TemplateResponse(
+            request,
+            "partials/source_modal.html",
+            {
+                "source": {"id": None, "name": name_clean, "url": url_clean, "why": why_clean},
+                "error": "That URL is already used by another source. Pick a different one.",
+            },
+        )
+    return Response(status_code=204, headers={"HX-Refresh": "true"})
+
+
 # ---------- source edit (real DB write) ----------
 
 @app.get("/sources/{source_id}/edit", response_class=HTMLResponse)
