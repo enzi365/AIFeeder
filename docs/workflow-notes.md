@@ -98,6 +98,7 @@ A slash command is just a prompt template — it doesn't carry tools, permission
 | `/decide <decision>` | Pose 2–3 options + tradeoffs for a decision. No implementation. |
 | `/plan-feature <task>` | Plan an implementation before writing code. |
 | `/log <note>` | Manually append an out-of-band note to the current session's conversation log. |
+| `/ship-checkpoint` | Refresh `state.md`, stage tracked docs + source, draft commit message, output `/compact` hint. Does **NOT** commit. See [Ship checkpoint](#ship-checkpoint--claude-initiated-state--commit-prep--compact) below. |
 
 ### When to add a new one
 

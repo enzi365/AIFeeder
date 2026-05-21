@@ -221,4 +221,26 @@ This is the parking lot, not a backlog — order doesn't imply priority. When so
 
 ---
 
-_Last updated: 2026-05-21 — added [two-stage classifier-then-summarizer] alongside the v1 single-call prompt._
+---
+
+# UI / UX
+
+Visual + interaction ideas deferred from the v1 design pass. Same shape as the entries above: **idea**, **intention / purpose**, **halfway considerations**.
+
+## [UI/UX] 3D glass persona avatar with light interaction
+
+**Idea:** A truly 3D rendered avatar/bust in the sidebar bottom with a glass-like material, refraction, and light bouncing off it as the user moves their cursor. Hover reveals translucent thought-bubbles representing the user's consumption persona derived from the per-source "why".
+
+**Intention / purpose:** Make the persona feel *alive* and tactile — a literal embodiment of the user's reading self that they can see catching the light. Reinforces the mindful-self-awareness loop more viscerally than a flat illustration could.
+
+**Halfway considerations:**
+- **4–8 hours of build time alone** — Three.js or a Spline embed, lighting rig, performance tuning. Doesn't fit the v1 1-hour UI budget.
+- **Material risk:** literal 3D glass on a sepia journal-feel app could clash. The flat-SVG alternative shipped in v1 (warm radial gradient + drop-shadow + slow-breathing pulse animation) may actually fit the journal aesthetic *better* than 3D would.
+- **Right trigger to revisit:** when the v1 flat avatar is shipped and the persona-thought-bubble interaction is validated as useful. Don't pay the 3D cost until the behaviour is proven.
+- **Alternative escalation paths before going full 3D:** Lottie animation of a faux-3D rotating bust, CSS `backdrop-filter` glass effect on a flat silhouette, Spline embed as middle-ground.
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md).
+
+---
+
+_Last updated: 2026-05-21 — added [UI/UX] section header + deferred [3D glass persona avatar]; opened the design conversation._
