@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}AIFeeder{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/circles.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="loading-stage" role="button" tabindex="0" aria-label="Click anywhere to enter">
+    <div class="circles" aria-hidden="true">
+        {# 2 text-bearing per-source-why circles, plus 5 decorative empties #}
+        {% set whys = sources[:2] %}
+        {% if whys|length >= 1 %}
+        <div class="circle c1">{{ whys[0].why[:120] }}{% if whys[0].why|length > 120 %}…{% endif %}</div>
+        {% else %}
+        <div class="circle c1 empty"></div>
+        {% endif %}
+        {% if whys|length >= 2 %}
+        <div class="circle c2">{{ whys[1].why[:120] }}{% if whys[1].why|length > 120 %}…{% endif %}</div>
+        {% else %}
+        <div class="circle c2 empty"></div>
+        {% endif %}
+        <div class="circle c3 empty"></div>
+        <div class="circle c4 empty"></div>
+        <div class="circle c5 empty"></div>
+        <div class="circle c6 empty"></div>
+        <div class="circle c7 empty"></div>
+    </div>
+    <h1 class="welcome-tag">What's worth your time today?</h1>
+    <p class="welcome-hint">click anywhere to enter</p>
+</div>
+{% endblock %}

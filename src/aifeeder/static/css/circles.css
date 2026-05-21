@@ -1,0 +1,93 @@
+/* Loading page — welcome tag + animated colour-blending circles.
+ * Per the locked design: 2 text-bearing circles (per-source whys) +
+ * 4-6 decorative empties; mix-blend-mode for watercolour palette mix;
+ * click anywhere → fly-out → navigate to /home.
+ */
+
+.loading-stage {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.welcome-tag {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 2.6rem;
+    letter-spacing: -0.012em;
+    color: var(--ink);
+    margin: 0;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+    transition: opacity 700ms var(--ease);
+}
+.welcome-hint {
+    margin-top: 0.6rem;
+    color: var(--ink-faint);
+    font-size: 0.92rem;
+    font-style: italic;
+    z-index: 2;
+    position: relative;
+    transition: opacity 700ms var(--ease);
+}
+
+.circles {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.circle {
+    position: absolute;
+    border-radius: 50%;
+    mix-blend-mode: multiply;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1.5rem;
+    font-family: 'Fraunces', serif;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: var(--ink);
+    transition: transform 750ms var(--ease), opacity 750ms var(--ease);
+    animation: drift 14s var(--ease) infinite alternate;
+}
+.circle.empty { padding: 0; }
+
+/* placement — relative to viewport via top/left % */
+.circle.c1 { width: 360px; height: 360px; top: 12%; left: 8%;
+    background: rgba(199, 123, 74, 0.45);  animation-delay: -2s; }
+.circle.c2 { width: 320px; height: 320px; top: 22%; right: 6%;
+    background: rgba(74, 124, 140, 0.45);  animation-delay: -7s; }
+.circle.c3 { width: 220px; height: 220px; bottom: 14%; left: 24%;
+    background: rgba(199, 123, 74, 0.40);  animation-delay: -4s; }
+.circle.c4 { width: 260px; height: 260px; bottom: 8%;  right: 22%;
+    background: rgba(74, 124, 140, 0.40);  animation-delay: -10s; }
+.circle.c5 { width: 180px; height: 180px; top: 60%;   left: 50%;
+    background: rgba(140, 110, 74, 0.40);  animation-delay: -5s; }
+.circle.c6 { width: 140px; height: 140px; top: 8%;    left: 50%;
+    background: rgba(244, 213, 141, 0.55); animation-delay: -1s; }
+.circle.c7 { width: 200px; height: 200px; top: 38%;   left: 38%;
+    background: rgba(217, 199, 172, 0.45); animation-delay: -8s; }
+
+@keyframes drift {
+    from { transform: translate(0, 0) scale(1); }
+    to   { transform: translate(20px, -16px) scale(1.04); }
+}
+
+.loading-stage.fly-out .circle {
+    transform: translate(var(--fx, 0), var(--fy, 0)) scale(2.4);
+    opacity: 0;
+}
+.loading-stage.fly-out .welcome-tag,
+.loading-stage.fly-out .welcome-hint {
+    opacity: 0;
+}

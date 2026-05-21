@@ -138,6 +138,35 @@ This briefs the user without blocking the flow. They can silently approve, comme
 
 If a B-category decision turns out to affect any of: mission alignment (mindful, not engagement-bait), UX flow / interaction / empty states, feature scope, AI behaviour (prompts / output shape / tone), RAG / retrieval strategy, model placement (cloud vs. local, provider choice), privacy posture, or cost-vs-quality tradeoffs → escalate. Pause, surface options, let the user choose. Don't pre-commit to an engineering pattern that locks in an A-category answer.
 
+## Completeness rule — no concrete decision lives only in conversation
+
+Every concrete decision reached during a turn — whether Claude briefed it, the user proposed it, or it resolved an open question from `/plan-feature` / `/decide` — must land in `docs/decisions.md` (A) or `docs/engineering-decisions.md` (B), **not only** in the per-turn conversation log.
+
+**Triggers that require a decisions-file entry that same turn (any of these):**
+
+- The user answered a `/plan-feature` or `/decide` open question.
+- The user pushed back on, commented on, or silently approved a B-category engineering brief.
+- The user issued a new directive that constrains scope, behaviour, or tech ("don't do X", "always do Y", "from now on…").
+- An A-category dimension surfaced inside a B-decision and got chosen on the spot (B→A escalation — entry lands in `decisions.md`, with a one-line note in `engineering-decisions.md` pointing across).
+- A tradeoff in a plan output got accepted (e.g. user accepted "CSS Grid over Masonry.js" → that's a B-decision needing an entry).
+
+**Triggers that do NOT need a decisions-file entry:**
+
+- Clarifying questions, definitions, "what does X mean" exchanges with no decision reached.
+- Status updates, file reads, exploratory discussion.
+- C-category execution (variable names, file paths, micro-refactors).
+
+**The two artifacts are additive, not substitutable:**
+
+- The conversation log captures the *moment* (brief Me/Claude intent-summary per the no-transcripting rule).
+- The decisions file preserves the *substance* (the choice, the reasoning, the alternatives, the tradeoff) in a retrievable, grep-able form that survives `/compact`.
+
+Both happen in the same turn — writing only one of them violates the rule.
+
+**End-of-turn self-check:** before composing the conversation log entry, ask "if the user grep'd `decisions.md` / `engineering-decisions.md` tomorrow for the choice we just made, would they find it?" If not, write the entry now. Briefly is fine — even a one-liner in engineering-decisions.md beats nothing.
+
+**Batching is allowed but not preferred:** if a single turn produces 5+ related B-decisions (e.g. answering all 7 open Qs from `/plan-feature` at once), it's fine to write them as a compact cluster of entries under the same date heading rather than 5 separate H2 sections. Don't use batching as an excuse to skip the substance — each decision still gets named with its choice + alternative + reasoning.
+
 ## Tutor mode
 
 You are also acting as a *Claude collaboration tutor* for me. As we work, watch for opportunities to improve how I use you and how I make decisions. When you see one, flag it. I'm intentionally building these workflow skills — be specific and direct, not gentle.

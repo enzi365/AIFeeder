@@ -81,6 +81,21 @@ If anything fires, tell Claude up front. If nothing fires, say "go" and Claude e
 
 If Claude's about to make a B-category choice and it turns out to touch any A-category dimension → escalate. Don't pre-commit to an engineering pattern that locks in an A-category answer.
 
+### Worked example — A/B rescan during `/plan-feature` (2026-05-21)
+
+The pre-session checklist isn't only for the pre-flight. The same scan applies to *every cluster of open questions* in a plan output — re-run it before answering them.
+
+**Where it fired:** the UI-build plan surfaced 7 open questions. Six were engineering-shaped (sample data path, username storage, logo placeholders, snapshot images, sidebar defaults, HTMX vs `fetch`) — pure B. The seventh — *"after thumbs-down, does the card move/disappear from home, or stay?"* — looked engineering-shaped on the surface ("how do we re-render"), but actually touched A: **mission posture**. Hiding cards on negative feedback is the inbox-zero / engagement-bait pattern; keeping them is the mindful-default.
+
+**What the rescan looked like in practice:** Claude flagged that question separately with "**This is A-category — your call.**" instead of recommending a default. The user weighed it deliberately ("keep all cards unchanged for now; revisit when the home-page intentionality is clearer") and parked the dimming-on-read idea in [ideas.md → UI/UX](ideas.md). One small habit, one decision saved from drift.
+
+**The lesson generalises:** whenever you get a list of open questions from `/plan-feature` (or `/decide`, or any planning-shaped output), pre-scan them through the A/B/C lens before answering:
+
+- Which ones are pure engineering (B/C)? Skim, answer fast.
+- Which ones smuggle in mission / UX / privacy / cost-vs-quality (A)? Slow down, weigh deliberately.
+
+Easy heuristic: if your gut answer to a question changes when you ask *"would TikTok do this?"*, it's an A.
+
 ---
 
 ## Slash commands
@@ -99,6 +114,7 @@ A slash command is just a prompt template — it doesn't carry tools, permission
 | `/plan-feature <task>` | Plan an implementation before writing code. |
 | `/log <note>` | Manually append an out-of-band note to the current session's conversation log. |
 | `/ship-checkpoint` | Refresh `state.md`, stage tracked docs + source, draft commit message, output `/compact` hint. Does **NOT** commit. See [Ship checkpoint](#ship-checkpoint--claude-initiated-state--commit-prep--compact) below. |
+| `/audit-rules` | Walk the project's rule files (CLAUDE.md, workflow-notes.md, decisions files) and surface drift between rules and behaviour — rules that don't fire, rules firing as noise, rules without tooling, artifacts without rules. Surfaces only; doesn't fix. |
 
 ### When to add a new one
 
@@ -239,6 +255,28 @@ When a tutor observation reflects a *durable* new practice, Claude also updates 
 ## Plan mode
 
 For non-trivial implementations, ask Claude to plan first — or use `/plan-feature`. Claude lays out the approach without touching files. Cheap to redirect a bad plan, expensive to undo bad code. Default to plan mode whenever the task crosses ~30 lines of intended changes or touches >2 files.
+
+### How to consume a `/plan-feature` output (the 5-step loop)
+
+A reusable pattern for getting maximum value out of any plan-shaped output (from `/plan-feature`, `/decide`, or any planning prompt). Skipping any step costs you something specific:
+
+**1. Read top-to-bottom once before reacting.** Get the *shape* in your head: approach → critical files → step order → tradeoffs → open questions. If the approach itself is wrong, kill it now — the steps don't matter and arguing about step 7 wastes context. Approve the approach, *then* dig into the rest.
+
+**2. A/B-rescan the open questions and the tradeoffs.** Before answering any open Q, mark each through the [A/B/C lens](#design-decision-spectrum-abc-split): is this *engineering* (B/C) or does it smuggle in mission / UX / privacy / cost-vs-quality (A)? Answer Bs fast; slow down on As. Same scan for the tradeoffs — Claude picked X over Y based on engineering best-practice, but the rejection of Y might quietly close off an A-category option you actually wanted. See the [worked example from 2026-05-21](#worked-example--ab-rescan-during-plan-feature-2026-05-21) — the Q6 catch came from exactly this rescan.
+
+**3. Push back on tradeoffs you don't understand.** Every "X over Y" in the tradeoffs section is a choice Claude made with limited info about *your* values, skill level, and future flexibility needs. If you don't get *why* Y was rejected, ask — like "what does cheaper mean here, am I paying?" or "is the dep really not worth it if I want no gaps later?" Claude's plan-for-a-senior-engineer is different from the plan-for-someone-learning-the-stack; explicit pushback is how Claude calibrates to *you* instead of to the median reader.
+
+**4. Lock the plan in writing — in `decisions.md` / `engineering-decisions.md`, not just chat.** Per the [completeness rule in CLAUDE.md](../CLAUDE.md#completeness-rule--no-concrete-decision-lives-only-in-conversation), every answered open question + every accepted tradeoff lands as an entry in the right decisions file. The conversation log is the moment; the decisions files are the substance. If a decision only lives in chat, it gets lost in `/compact`, it's not grep-able, and "we agreed on X" becomes "wait, did we?" two weeks later.
+
+**5. Surface escalations as they land during the build.** Once Claude starts implementing, every B-category brief that *touches* an A-category dimension (the [B→A escalation rule](#escalation-rule)) should stop the flow and let you decide. Don't rubber-stamp briefs once the build is moving — the same A/B rescan from step 2 applies in-flight. The `users` table moment on 2026-05-21 is the canonical example: started as "what's the username source" (B), turned out to constrain the public-distribution forward-compat path (A).
+
+**Common ways this loop fails (and what to do):**
+
+- *Skip step 1 → react step-by-step.* You end up arguing about step 7 of a plan whose step 2 is already wrong. → Slow down. Read once before answering anything.
+- *Skip step 2 → rubber-stamp open Qs as engineering.* You quietly close off mission-aligned options without realising. → Apply the "would TikTok do this?" heuristic to every open Q before answering.
+- *Skip step 3 → trust tradeoffs you don't understand.* You inherit Claude's defaults instead of choosing them. → Ask "why not Y?" for every tradeoff line that's not obvious to you.
+- *Skip step 4 → answers stay in chat only.* Three sessions later `/compact` ate it, decisions.md doesn't have it, the build goes a different way. → Make the decisions-file write happen *in the same turn* as the answer.
+- *Skip step 5 → A-category escalations get treated as B mid-build.* Same drift as step 2, just later and more expensive to undo. → Treat every "Engineering choice:" brief like an open Q from the plan.
 
 ---
 

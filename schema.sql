@@ -1,6 +1,12 @@
 -- AIFeeder schema. Single-user local SQLite. Idempotent (IF NOT EXISTS).
 -- Future-MVP columns are present from v1 even when unused in the slice.
 
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE IF NOT EXISTS sources (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
@@ -69,6 +75,10 @@ CREATE TABLE IF NOT EXISTS cost_log (
     operation TEXT NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Seed: v1 user. INSERT OR IGNORE = idempotent across re-runs.
+-- Single-row in v1 per decisions.md → 2026-05-21 — users table.
+INSERT OR IGNORE INTO users (id, name) VALUES (1, 'Emma');
 
 -- Seed: v1 sources. INSERT OR IGNORE = idempotent across re-runs.
 INSERT OR IGNORE INTO sources (name, url, source_type, why) VALUES

@@ -243,4 +243,36 @@ Visual + interaction ideas deferred from the v1 design pass. Same shape as the e
 
 ---
 
-_Last updated: 2026-05-21 — added [UI/UX] section header + deferred [3D glass persona avatar]; opened the design conversation._
+## [UI/UX] Card snapshot / thumbnail image
+
+**Idea:** Each home-feed card carries a small visual snapshot of the content — a hero image, screenshot of a code block, a cropped figure from a paper, or auto-rendered "first paragraph as image". Gives the user a glance-level signal of what they're about to open, before they read the title or "why".
+
+**Intention / purpose:** Visual recognition is faster than text scanning; a snapshot lets the user form instant intuition ("oh, I want to read *that* one") that text labels alone can't. Especially valuable on the masonry grid where many cards compete for attention.
+
+**Halfway considerations:**
+- **No single ingestion path covers all sources.** RSS sometimes has `<media:thumbnail>`, ArXiv doesn't, YouTube does. Need per-source extractors.
+- **AI prompt would need a snapshot extraction step** (or a separate small vision/preview model call) — adds latency and cost per item.
+- **Risk: image-driven scanning shifts the app toward Instagram-feel** — tension with the mindful posture. Mitigation: small thumbnails, never hero-sized; placeholder is fine for sources without images (don't pad with generated AI art).
+- **Right trigger:** when the v1 colour-only cards work well enough to keep using, but the user notices themselves scanning slower than they'd like to find a specific item.
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md); plan → step 7 of the UI build.
+
+---
+
+## [UI/UX] Read-state indicator on home cards (dimming / opacity)
+
+**Idea:** After the user scrolls through an entire content item (or marks it read, or returns from the content page), the card on home dims slightly — opacity 0.6 or a subtle desaturation. Cards stay in place (no reflow), but the visual weight shifts so unread items dominate the eye.
+
+**Intention / purpose:** Without changing the "everything the AI recommended" home behaviour, give the user a low-friction signal of "you've already engaged with this" — so they don't waste attention re-scanning the same items, but the item is still available to revisit. Sidesteps the "mark as read / hide" pattern that pushes toward inbox-zero anxiety.
+
+**Halfway considerations:**
+- **Trigger choice matters.** "Scrolled to bottom of content page" is more mindful than "clicked title" (intent vs. brush). May need experimentation.
+- **`items.is_read` column already exists** in the schema — just needs to be populated. No migration.
+- **Anti-engagement-bait check:** must not become a streak/progress bar ("you've read 80% of today's feed!"). Just a visual indicator, no counter.
+- **Right trigger:** when the user catches themselves scanning past already-read cards repeatedly. If that never happens, the indicator isn't needed.
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md); plan → step 7 of the UI build.
+
+---
+
+_Last updated: 2026-05-21 — UI/UX section grew: added [Card snapshot] and [Read-state indicator] deferrals from the /plan-feature pass._

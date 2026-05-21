@@ -55,6 +55,28 @@ def _cmd_preview(per_source: int = 3) -> None:
     print(f"\n=== Preview total cost: ${total_cost:.4f} ===")
 
 
+def _cmd_serve(host: str, port: int, reload: bool) -> None:
+    """Run the local FastAPI web UI."""
+    import uvicorn
+
+    apply_schema()
+    uvicorn.run(
+        "aifeeder.web.app:app",
+        host=host,
+        port=port,
+        reload=reload,
+    )
+
+
+def _cmd_seed_fake() -> None:
+    """Populate the DB with ~12 fake items + summaries for UI dev."""
+    from .seed_fake import seed_fake_items
+
+    apply_schema()
+    n = seed_fake_items()
+    print(f"Seeded {n} fake items (idempotent — re-runs are no-ops).")
+
+
 def main() -> None:
     load_dotenv()
 
@@ -70,6 +92,14 @@ def main() -> None:
         help="Items to summarize per source (default 3)",
     )
     sub.add_parser("refresh", help="Fetch sources, summarize, persist to DB")
+    serve = sub.add_parser("serve", help="Run the local web UI")
+    serve.add_argument("--host", default="127.0.0.1")
+    serve.add_argument("--port", type=int, default=8000)
+    serve.add_argument("--no-reload", action="store_true", help="Disable auto-reload")
+    sub.add_parser(
+        "seed-fake",
+        help="Insert fake items + summaries for UI dev (idempotent; no API calls)",
+    )
 
     args = parser.parse_args()
     if args.cmd == "init":
@@ -79,3 +109,7 @@ def main() -> None:
         _cmd_preview(per_source=args.per_source)
     elif args.cmd == "refresh":
         raise NotImplementedError("Implementing after preview validates the prompt")
+    elif args.cmd == "serve":
+        _cmd_serve(host=args.host, port=args.port, reload=not args.no_reload)
+    elif args.cmd == "seed-fake":
+        _cmd_seed_fake()

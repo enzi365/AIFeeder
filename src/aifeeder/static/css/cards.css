@@ -1,0 +1,133 @@
+/* Home-page masonry + cards.
+ * 3-col grid, dense flow. video=2col, text=2row, square=1x1.
+ * Hover overlay reveals purpose + key_points (no grid reflow).
+ */
+
+.feed-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-auto-rows: 220px;
+    grid-auto-flow: dense;
+    gap: 1.5rem;
+}
+
+@media (max-width: 1100px) {
+    .feed-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+    .feed-grid { grid-template-columns: 1fr; }
+}
+
+.card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1.25rem 1.4rem;
+    overflow: hidden;
+    box-shadow: var(--shadow-soft);
+    transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    color: inherit;
+}
+.card:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lift);
+    text-decoration: none;
+}
+.card.shape-video { grid-column: span 2; }
+.card.shape-text  { grid-row: span 2; }
+
+.card .accent-stripe {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+}
+.card.palette-warm    .accent-stripe { background: var(--accent-warm); }
+.card.palette-cool    .accent-stripe { background: var(--accent-cool); }
+.card.palette-neutral .accent-stripe { background: var(--accent-neutral); }
+
+.card .title {
+    font-family: 'Fraunces', serif;
+    font-size: 1.15rem;
+    font-weight: 500;
+    line-height: 1.3;
+    margin: 0 0 0.6rem 0;
+    display: inline;
+    background-image: linear-gradient(transparent 60%, var(--accent-warm-soft) 60%);
+    background-size: 100% 100%;
+    padding: 0 0.05em;
+}
+.card.palette-warm    .title { background-image: linear-gradient(transparent 60%, var(--accent-warm-soft) 60%); }
+.card.palette-cool    .title { background-image: linear-gradient(transparent 60%, var(--accent-cool-soft) 60%); }
+.card.palette-neutral .title { background-image: linear-gradient(transparent 60%, var(--accent-neutral-soft) 60%); }
+
+.card.shape-text .title { font-size: 1.3rem; }
+
+.card .why {
+    font-style: italic;
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin: 0.4rem 0 0;
+}
+
+.card .meta {
+    margin-top: auto;
+    padding-top: 0.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.78rem;
+    color: var(--ink-faint);
+    text-transform: lowercase;
+    letter-spacing: 0.03em;
+}
+.read-pill {
+    display: inline-block;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    background: var(--card-elevated);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+}
+
+.card .overlay {
+    position: absolute;
+    inset: 4px 4px 4px 8px;  /* sits inside the accent stripe */
+    background: var(--card-elevated);
+    border-radius: 4px;
+    padding: 1.25rem 1.4rem;
+    transform: translateY(102%);
+    transition: transform var(--t-med) var(--ease);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    overflow-y: auto;
+}
+.card:hover .overlay { transform: translateY(0); }
+.card .overlay h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--ink-faint);
+    font-weight: 600;
+    margin: 0;
+}
+.card .overlay p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+    color: var(--ink);
+}
+.card .overlay ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 0.88rem;
+    color: var(--ink);
+    line-height: 1.45;
+}
+.card .overlay ul li { margin-bottom: 0.25rem; }

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Notes — AIFeeder{% endblock %}
+
+{% block body %}
+<div class="shell" data-sidebar-collapsed="{{ 'true' if sidebar_collapsed else 'false' }}">
+    {% include "_sidebar.html" %}
+    <main class="page">
+        <header class="page-header">
+            <h1>Notes</h1>
+            <p class="blurb">Your reflections, alongside the content they're linked to.</p>
+        </header>
+
+        {% if note_rows %}
+        <section style="display: flex; flex-direction: column; gap: 1.25rem; max-width: 720px;">
+            {% for row in note_rows %}
+            <article style="background: var(--card); border: 1px solid var(--rule); border-radius: 6px; padding: 1.1rem 1.3rem; box-shadow: var(--shadow-soft);">
+                <div style="font-family: 'Fraunces', serif; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--ink-faint); margin-bottom: 0.4rem;">
+                    {{ row.note.title }} · {{ row.note.created_at[:16].replace('T', ' ') }}
+                </div>
+                <p style="margin: 0 0 0.8rem;">{{ row.note.body }}</p>
+                <a href="/content/{{ row.item.id }}" style="font-size: 0.85rem; color: var(--ink-soft);">
+                    on <em>{{ row.item.title }}</em> →
+                </a>
+            </article>
+            {% endfor %}
+        </section>
+        {% else %}
+        <p class="empty-state">No notes yet. Open any item and tap the pen icon to add one.</p>
+        {% endif %}
+    </main>
+</div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% import "_icons.html" as ico %}
+<button class="action-btn {% if is_favourite %}favourited{% endif %}"
+        type="button"
+        hx-post="/favourite/{{ item_id }}"
+        hx-swap="outerHTML"
+        title="{% if is_favourite %}Unfavourite{% else %}Favourite{% endif %}">
+    {{ ico.star(filled=is_favourite) }}
+</button>

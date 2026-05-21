@@ -1,0 +1,49 @@
+{% import "_icons.html" as ico %}
+
+<aside class="sidebar">
+    <div class="sidebar-top">
+        <div class="sidebar-icons">
+            <button class="icon-btn plus" type="button" title="Add source">{{ ico.plus() }}</button>
+            <button class="icon-btn" type="button" title="Settings">{{ ico.gear() }}</button>
+            <button class="icon-btn" type="button" title="Profile">{{ ico.avatar_icon() }}</button>
+        </div>
+        <button class="icon-btn" type="button" data-sidebar-toggle title="Collapse">
+            {{ ico.chevron_left() }}
+        </button>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a class="nav-item {% if active_page == 'library' %}active{% endif %}" href="/library">
+            {{ ico.books() }}<span class="label">Library</span>
+        </a>
+        <a class="nav-item {% if active_page == 'favourites' %}active{% endif %}" href="/favourites">
+            {{ ico.star(filled=false) }}<span class="label">Favourites</span>
+        </a>
+        <a class="nav-item {% if active_page == 'notes' %}active{% endif %}" href="/notes">
+            {{ ico.notes() }}<span class="label">Notes</span>
+        </a>
+    </nav>
+
+    <h3>Sources</h3>
+    <div class="source-list">
+        {% for s in sources %}
+        <a class="source-row" href="#" title="{{ s.why }}">
+            <span class="monogram">{{ s.monogram }}</span>
+            <span class="source-name">{{ s.name }}</span>
+        </a>
+        {% else %}
+        <div class="empty-state" style="padding: 0.5rem 0.6rem; font-size: 0.85rem;">
+            No sources yet.
+        </div>
+        {% endfor %}
+    </div>
+
+    <div class="avatar-frame" title="Your reading persona">
+        <div class="thought-bubbles">
+            <div class="bubble b1">curious about AI</div>
+            <div class="bubble b2">practitioner-led</div>
+            <div class="bubble b3">no fluff</div>
+        </div>
+        <div class="avatar"></div>
+    </div>
+</aside>

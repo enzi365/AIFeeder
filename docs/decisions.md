@@ -171,7 +171,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 ## 2026-05-20 — Local-only, single-user app for v1
 
-**Status:** Accepted
+**Status:** Accepted; the "no forward-compat scaffolding" line was **partially superseded** by *2026-05-21 — `users` table in v1 schema* (the `users` parent table is now in v1; `items.user_id` etc. are still deferred).
 
 **Decision:** AIFeeder v1 runs locally on the builder's own machine, single-user only. No auth, no hosting, no multi-tenancy, no subscription billing. **Schema is designed purely for a single user — no `user_id` forward-compat scaffolding.** If we later decide to distribute publicly, schema migration is accepted as the cost.
 
@@ -231,4 +231,62 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 ---
 
-_Last updated: 2026-05-21 — added `style_tag` orthogonal to `content_type_tag` (7-value style vocabulary)._
+## 2026-05-21 — `users` table in v1 schema (single-row, forward-compatible)
+
+**Status:** Accepted — **partial supersession** of *2026-05-20 — Local-only, single-user app for v1* on the "no `user_id` forward-compat scaffolding" line.
+
+**Decision:** Add a `users` table to the schema even though v1 is single-user. Shape: `users(id INTEGER PRIMARY KEY, name TEXT NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`. Single row seeded at `init` time. Templates read `{{ user.name }}` instead of a hardcoded string or env-var lookup.
+
+**Why:** This started as a B-question — "where does the username come from for the home-page header `[username]'s Feed`?" — with three options (hardcoded, env var, `users` table). User pushed back: "don't hardcode. add users table." Escalated B→A because (a) it touches schema shape, (b) it pre-resolves part of the future public-distribution retrofit cost (the `users` row already exists; future multi-tenancy adds `user_id` foreign keys on `items` / `feedback` but doesn't need to create the parent table from scratch), (c) the original 2026-05-20 local-only decision explicitly said *no forward-compat scaffolding* — this is a small, considered relaxation of that.
+
+**Tradeoff:** Mild contradiction with the original 2026-05-20 "no forward-compat scaffolding" line — we're paying ~30 lines of schema + init code for a row that v1 never queries with `WHERE user_id = ?`. Accepted as a tiny scope cost for cleaner template ergonomics + a smaller future migration. Does *not* extend to `items.user_id` etc. — those still get added during the public-distribution migration if that ever happens.
+
+**Refs:** decisions.md → *2026-05-20 — Local-only, single-user app for v1* (partial supersession on the scaffolding line); ideas.md → [Public distribution (auth, multi-tenancy, billing, hosting)](ideas.md#public-distribution-auth-multi-tenancy-billing-hosting); engineering-decisions.md → *2026-05-21 — /plan-feature open-Q resolutions (cluster) › b. users table*; conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 17:05 entry).
+
+---
+
+## 2026-05-21 — Home cards stay unchanged after feedback (no hide, no reflow, no dim)
+
+**Status:** Accepted — **provisional** (user flagged the home-page intentionality as still-evolving; "stay unchanged" is the v1 default, not a forever rule)
+
+**Decision:** When the user submits feedback (thumbs up or down) or returns from a content page, the card on home stays exactly as it was — same position, same opacity, same visual weight. No removal, no reflow, no dimming, no "read" indicator.
+
+**Why:** The home page in v1 is "anything the AI recommended" — not "unread items only" and not "items you haven't engaged with." Hiding cards on thumbs-down would push the app toward the inbox-zero pattern (clear the feed = ritual reward), which is the mainstream-reader trap the mission explicitly rejects. Dimming or marking-read would push toward a progress-meter feel. Keeping cards unchanged preserves the journal / library posture — the feed is a *place you visit*, not a queue you clear.
+
+**Tradeoff:** Cards already engaged with will reappear identical across sessions until the AI surfaces something newer; user may scan past them repeatedly. Accepted in v1 because the alternative (any kind of read-state indicator) introduces gamification risk. The dimming-on-scroll-through idea is parked in [ideas.md → UI/UX → Read-state indicator on home cards](ideas.md#uiux-read-state-indicator-on-home-cards-dimming--opacity) as a *future* option to revisit only if the user catches themselves re-scanning past read cards as a real friction, *not* as a default.
+
+**Open follow-on:** What does the home page *intentionally show*? "Anything AI-recommended" is the v1 answer, but the user explicitly flagged this as not-fully-resolved. When that question gets a sharper answer, this decision may need a revisit — the right card-state behaviour depends on what the feed is *for*.
+
+**Refs:** ideas.md → [Read-state indicator on home cards (dimming / opacity)](ideas.md#uiux-read-state-indicator-on-home-cards-dimming--opacity); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 17:05 entry).
+
+---
+
+## 2026-05-21 — Sidebar default state: open on home, collapsed on content
+
+**Status:** Accepted
+
+**Decision:** Sidebar is visible-and-expanded by default on the home page. On the content page, the sidebar starts collapsed (chevron visible to expand). Loading page has no sidebar at all (per the 2026-05-20 design lock).
+
+**Why:** The two pages have different jobs. Home is browsing/scanning — the persona avatar + source list + nav are part of the orientation surface, so sidebar belongs visible. Content is reading — single-column 680px serif column wants minimal chrome, the reader gets the full focal width. Different defaults match different intentionalities.
+
+**Tradeoff:** Two different defaults means the user has to learn the pattern (vs. one consistent default). Accepted because the asymmetry tracks the actual UX of the two pages — and the chevron is always available either way, so the user can override per-page if a preference emerges. If a single consistent default starts feeling cleaner, "always open" is the safer fallback (open-by-default keeps the avatar reminder + nav present always) — re-evaluate after a few real reading sessions.
+
+**Refs:** state.md → *Recent decisions › Pages + nav*; engineering-decisions.md → *2026-05-21 — /plan-feature open-Q resolutions (cluster)*; conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 17:05 entry).
+
+---
+
+## 2026-05-21 — Cards are colour-only in v1; no thumbnail / snapshot images
+
+**Status:** Accepted — **provisional** (user explicitly flagged thumbnails as a future want)
+
+**Decision:** v1 home-page cards display title + "why" + read-time pill + small category + accent-stripe-coloured-by-content-type. **No image element.** Sources without reliable hero images (ArXiv has none, RSS variable) get colour-only cards uniformly — no per-source asymmetry.
+
+**Why:** Two reasons. (1) **No reliable ingestion path** — RSS sometimes has `<media:thumbnail>`, ArXiv doesn't, Simon's blog is mixed. Building per-source extractors is ingestion work that doesn't belong in the UI build. (2) **Mission tension** — image-heavy cards push toward visual-feed scanning (Instagram/Pinterest pattern), where colour-only + serif title + sentence-based "why" pushes toward word-led / reading-led scanning (journal/library pattern). Aligned with the mindful posture.
+
+**Tradeoff:** Slower visual recognition for power-users who'd benefit from a glance-level cue. Accepted in v1 because the alternative requires either (a) ingestion-side image extraction (complex, per-source) or (b) auto-generated AI visuals (terrible idea — drift toward decorative noise). The thumbnail idea is parked in [ideas.md → UI/UX → Card snapshot / thumbnail image](ideas.md#uiux-card-snapshot--thumbnail-image) with the user's explicit "future i want a snapshot to get a glimpse / thumbnail of the content" — to revisit when (a) the user notices themselves scanning cards slowly, or (b) we add a source that reliably ships hero images.
+
+**Refs:** ideas.md → [Card snapshot / thumbnail image](ideas.md#uiux-card-snapshot--thumbnail-image); engineering-decisions.md → *2026-05-21 — /plan-feature open-Q resolutions (cluster)*; conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 17:05 entry).
+
+---
+
+_Last updated: 2026-05-21 — added 4 A-decisions from the /plan-feature open-Q resolution turn (users table B→A escalation, no-card-change on feedback, sidebar defaults, no-thumbnails-v1). Establishes the [completeness rule](../CLAUDE.md#completeness-rule--no-concrete-decision-lives-only-in-conversation) cadence: every answered open Q now lands here or in engineering-decisions.md, not just in the conversation log._

@@ -1,0 +1,31 @@
+{% import "_icons.html" as ico %}
+<aside class="note-panel" role="dialog" aria-label="Notes">
+    <button class="close-btn" type="button" data-close-note-panel title="Close">
+        {{ ico.close_x() }}
+    </button>
+    <h3>Notes</h3>
+
+    {% if notes %}
+    <div style="display: flex; flex-direction: column; gap: 0.5rem;">
+        {% for n in notes %}
+        <div class="note-existing">
+            <div class="note-meta">{{ n.title }} · {{ n.created_at[:16].replace('T', ' ') }}</div>
+            <div>{{ n.body }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p style="color: var(--ink-soft); font-style: italic; margin: 0;">No notes yet on this item.</p>
+    {% endif %}
+
+    <form hx-post="/notes/{{ item_id }}" hx-target=".note-panel" hx-swap="outerHTML">
+        <input type="text" name="title" placeholder="Title (optional)" maxlength="120">
+        <textarea name="body" placeholder="A note for future-you about this piece…" required></textarea>
+        <div class="form-actions">
+            <button type="button" class="cancel-btn" data-close-note-panel
+                    style="background: none; border: none; color: var(--ink-soft); cursor: pointer;">cancel</button>
+            <button type="submit" class="submit-btn"
+                    style="background: var(--ink); color: var(--card); border: none; border-radius: 6px; padding: 0.4rem 0.9rem; cursor: pointer; font-family: inherit; font-size: 0.85rem;">save note</button>
+        </div>
+    </form>
+</aside>

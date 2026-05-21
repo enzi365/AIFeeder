@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% import "_icons.html" as ico %}
+{% block title %}{{ item.title }} — AIFeeder{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/content.css') }}">
+{% endblock %}
+
+{% block body %}
+<div class="shell" data-sidebar-collapsed="{{ 'true' if sidebar_collapsed else 'false' }}">
+    {% include "_sidebar.html" %}
+    <main class="page">
+        <article class="content-page">
+            <a href="/home" style="font-size: 0.85rem; color: var(--ink-faint); display: inline-block; margin-bottom: 1.5rem;">← back to feed</a>
+
+            <h1>{{ item.title or "[untitled]" }}</h1>
+            <p class="content-source-line">
+                from <em>{{ item.source_name }}</em>
+                {% if item.url %} · <a href="{{ item.url }}" target="_blank" rel="noopener">open original ↗</a>{% endif %}
+            </p>
+
+            <aside class="sticky-note">
+                <span class="label">why this is worth your time</span>
+                <p>{{ item.relevance_reason }}</p>
+                {% if item.purpose %}<p style="margin-top: 0.6rem; font-size: 0.92rem; color: var(--ink-soft);">{{ item.purpose }}</p>{% endif %}
+            </aside>
+
+            <div class="reader">
+                {% if item.raw_content %}
+                    {% for para in item.raw_content.split('\n\n') %}
+                        {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+                    {% endfor %}
+                {% else %}
+                    <p class="no-content">No content body available. <a href="{{ item.url }}" target="_blank" rel="noopener">Open original ↗</a></p>
+                {% endif %}
+            </div>
+        </article>
+
+        {# Action stack (fixed bottom-right) #}
+        <div class="actions">
+            <div class="action-slot" title="Feedback">
+                <button class="action-btn" type="button"
+                        hx-post="/feedback/{{ item.id }}/up"
+                        hx-target="#feedback-callout"
+                        hx-swap="innerHTML"
+                        title="Worth my time">
+                    {{ ico.up_arrow() }}
+                </button>
+                <button class="action-btn" type="button"
+                        hx-post="/feedback/{{ item.id }}/down"
+                        hx-target="#feedback-callout"
+                        hx-swap="innerHTML"
+                        title="Didn't fit">
+                    {{ ico.down_arrow() }}
+                </button>
+            </div>
+
+            <button class="action-btn" type="button"
+                    hx-get="/notes/{{ item.id }}/panel"
+                    hx-target="#note-panel-slot"
+                    hx-swap="innerHTML"
+                    title="Add a note">
+                {{ ico.pen() }}
+            </button>
+
+            {% with item_id = item.id, is_favourite = item.is_favourite %}
+                {% include "partials/star_button.html" %}
+            {% endwith %}
+        </div>
+
+        <div id="feedback-callout"></div>
+        <div id="note-panel-slot"></div>
+    </main>
+</div>
+{% endblock %}

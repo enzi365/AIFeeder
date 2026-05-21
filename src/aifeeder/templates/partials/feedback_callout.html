@@ -1,0 +1,27 @@
+<div class="feedback-callout">
+    {% if direction == "up" %}
+    <h4>Which "why" did it fit?</h4>
+    <div class="chips">
+        <button type="button" class="chip">{{ source_why[:60] }}{% if source_why|length > 60 %}…{% endif %}</button>
+        <button type="button" class="chip">{{ relevance_reason[:60] }}{% if relevance_reason|length > 60 %}…{% endif %}</button>
+        <button type="button" class="chip">+ add new reason</button>
+    </div>
+    {% else %}
+    <h4>What about this didn't fit?</h4>
+    <div class="chips">
+        <button type="button" class="chip">off-topic</button>
+        <button type="button" class="chip">already knew this</button>
+        <button type="button" class="chip">too shallow</button>
+        <button type="button" class="chip">too dense</button>
+        <button type="button" class="chip">wrong format</button>
+        <button type="button" class="chip">+ add new reason</button>
+    </div>
+    {% endif %}
+    <div class="actions-row">
+        <button type="button" class="cancel-btn" data-cancel-feedback>cancel</button>
+        <button type="button" class="submit-btn"
+                hx-post="/feedback/{{ item_id }}/refine"
+                hx-target="#feedback-callout"
+                hx-swap="innerHTML">save</button>
+    </div>
+</div>
