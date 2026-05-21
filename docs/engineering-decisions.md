@@ -284,3 +284,39 @@ Engineering-side choices supporting the new source-edit feature. The A-side ("so
 ---
 
 _Last updated: 2026-05-21 — Source-edit modal cluster (6 B-decisions supporting the A-decision in decisions.md: new `writes.py` module, modal pattern + HX-Refresh save, helper-hint copy choice, sidebar source-row HTMX wiring, `get_source` repo lookup, graceful duplicate-URL handling via `.modal-error` re-render)._
+
+---
+
+## 2026-05-22 — `aifeeder refresh` plan-feature open-Q resolutions (cluster)
+
+Resolved during `/plan-feature wire refresh subcommand`. User agreed to all 5 architectural tradeoffs (1 wholesale approval) and answered 7 open questions; compact cluster below. Implementation has not started — these lock the shape before code lands.
+
+### Architectural tradeoffs (approved wholesale)
+
+- **a. Per-item commit boundary, not per-source batch.** A crash mid-source must not waste already-paid AI calls. Disk I/O is cheap vs. summarization cost.
+- **b. Within-one-run retry scope.** Transient retries (3x, 1s/4s/16s exp backoff) happen inside a single `refresh` invocation only — no `retry_count` / `next_retry_at` columns. Cost: a yesterday-transient item is silently re-retried tomorrow as fresh. Acceptable in v1; revisit if a source goes flaky for days.
+- **c. Writes live in `refresh.py`, not a shared `aifeeder/writes.py`.** Keeps the web-side / CLI-side split explicit (`web/writes.py` is web-only; `refresh.py` is CLI-only). Promote to a shared module only when a third write surface appears (e.g. scheduler).
+- **d. Failure classification by exception type, not by adapting `ai.py`.** Pragmatic lookup table (`urllib.error.URLError` / `socket.timeout` / `openai.RateLimitError` → transient; `openai.AuthenticationError` → permanent; `json.JSONDecodeError` → content; default → unknown). Couples `refresh.py` to provider exception names; revisit when Anthropic provider is wired.
+- **e. No periodic/cron refresh in v1 — manual CLI only.** Mission-aligned: doomscrolling-replacement actively wants manual cadence, not push.
+
+### Open-question answers
+
+1. **Notes / favourites / highlights migration — deferred to YouTube session.** Stays in `web/fakes.py` as in-memory dicts. `refresh` only inserts new items + summaries; doesn't touch the fake stores (they're keyed by item_id; new items just have no notes/favs until added).
+2. **Default `--per-source` cap = 10.** First-run backlog protection. Override via `--per-source N`.
+3. **Cost reporting: console only, not UI.** Each `refresh` prints per-item cost + per-source subtotal + total. `cost_log` rows are written for future analysis; no UI dashboard in v1. **Refs:** state.md → *Out of v1: cost dashboard*.
+4. **Don't preserve `seed-fake` items alongside real items.** When `refresh` lands, expected flow is: delete the DB, re-`init`, run `refresh` for real data. No co-existence with fakes. Will document the reset workflow in state.md when implementation lands.
+5. **`consecutive_failures` resets on source-fetch success, not per-item AI success.** The `!` icon indicates source health (feed unreachable), not summarization health (an AI rate-limit shouldn't mask a healthy source).
+6. **`--dry-run` kept.** Fetches + parses feeds + shows what *would* be ingested, but doesn't insert items, doesn't call AI, doesn't write to DB. Use case: debugging "why didn't `refresh` pick up that Simon post" without paying AI cost.
+7. **Verbose by default + `--quiet` flag** *(supersedes my initial recommendation of the opposite default).* `aifeeder refresh` prints full preview-style 12-line detail per item by default (verdict, confidence, reason, type/style/read-time, purpose, cost, key points). `--quiet` drops to one-line-per-item + per-source subtotal. Rationale: user wants the AI's full reasoning visible at the moment of ingestion, not buried behind a flag — the noisy default is mission-aligned (mindful consumption *includes* understanding why an item was filtered in/out).
+
+### Scope ordering (post-refresh phase plan)
+
+- **Phase order after `refresh` lands:** real-world test → fix top 1-2 issues → **source-add UI** (reuses source-edit modal pattern with empty fields; orange `+` button currently no-op) → YouTube/Struthless + notes/favs/highlights schema migration. Source-add UI was previously *unscheduled*; user explicitly slotted it before YouTube this turn.
+
+**User response:** explicit approval to all 5 tradeoffs + 7 open-Q answers (interactive `AskUserQuestion` used for #7 to disambiguate "preview style" wording). #7 specifically reversed my initial recommendation — user wants verbose default.
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 `/plan-feature` turn); state.md → *Next steps* (will reorder when implementation lands); decisions.md → *2026-05-21 — Sources are user-editable from the UI* (open follow-on (a) re. add-source modal pattern reuse is now scheduled).
+
+---
+
+_Last updated: 2026-05-22 — `aifeeder refresh` plan-feature open-Q resolutions cluster (5 tradeoffs + 7 open-Q answers + post-refresh scope ordering). No code yet — locks the shape before implementation starts._

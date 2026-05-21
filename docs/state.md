@@ -2,7 +2,7 @@
 
 ## Current focus
 
-**UI iteration round 1 complete + source-edit modal landed (first UI-→-DB write path) — paused for next browser-check before wiring `refresh`.** All 14+ feedback items from the first browser-check executed (sidebar polish, home cards, content page, avatar restructure across 2 iterations, 3 iterations on the card-title highlight). Source-edit modal is the newest surface — clicking a sidebar source opens a centered modal that blurs the main column (sidebar stays sharp via z-index), URL + why edits persist to the real `sources` table via a new `web/writes.py` module. Next is browser-check round 2 → `/refresh` wiring → real-world test.
+**Browser-check round 2 passed ("UI is passable, move on") + `aifeeder refresh` plan locked via `/plan-feature` — paused before code starts.** No source-files touched this session; pure planning + decisions-logging. All 5 architectural tradeoffs approved wholesale + all 7 open questions answered (cluster in [`engineering-decisions.md`](engineering-decisions.md) → *2026-05-22 — `aifeeder refresh` plan-feature open-Q resolutions*). One reversal from Claude's initial recommendation: verbose default + `--quiet` flag (not the opposite). Source-add UI explicitly scheduled to land **after refresh + real-world test, before YouTube** — was previously unscheduled.
 
 Working title: *Mindful Content Feed* — intent-filtered, mindful consumption. v1 audience: the builder.
 
@@ -10,11 +10,11 @@ Working title: *Mindful Content Feed* — intent-filtered, mindful consumption. 
 
 Full A-category reasoning in [`docs/decisions.md`](decisions.md); B-category in [`docs/engineering-decisions.md`](engineering-decisions.md). UX/UI deliberation in [`docs/conversation/2026-05-20_b670_ux-design.md`](conversation/2026-05-20_b670_ux-design.md). Most relevant since last refresh:
 
+- **`aifeeder refresh` plan-feature cluster (5 tradeoffs + 7 open-Q answers)** — locks the shape of the next phase before code lands. Per-item commit boundary; within-one-run retry scope (no retry_count columns); writes live in `refresh.py` not a shared module; failure classification by exception type; no cron in v1. Open-Q answers: notes/favs/highlights migration deferred to YouTube session; `--per-source` cap 10; cost console-only (no UI dashboard); no seed-fake/real coexistence (wipe + re-init); `consecutive_failures` resets on source-fetch success; `--dry-run` kept; **verbose default + `--quiet` flag (reversed Claude's initial recommendation)**. Source-add UI explicitly scheduled before YouTube. See [engineering-decisions.md → 2026-05-22 cluster](engineering-decisions.md).
 - **Sources are user-editable from the UI** — first UI-→-DB write path in v1. Click a sidebar source → centered modal (backdrop blurs main column, sidebar z-indexed above), URL + why fields, save persists via new [`web/writes.py`](../src/aifeeder/web/writes.py) using `UPDATE sources SET url = ?, why = ?`. Knock-on: the modal pattern becomes the in-house convention; `repo.py` stays read-only by design; `web/writes.py` is the natural home for future archive/delete/mark-read UI writes.
 - **First browser-check feedback round (5 A-decisions + 9 B-decisions)** — thumbs supersedes the locked "icon arrows not thumbs"; plain-block content callout supersedes the sticky-note; Source Sans 3 body typography refines the 2026-05-20 typography lock; apple yes/maybe indicators on home cards (whole = yes, 3/4-eaten = maybe); in-text highlighting + quote-attached notes (B→A escalation — touches scope, schema-shape, and the note-taking interaction model).
 - **Avatar restructure** — the shaded radial-gradient circle is now the *head* (not a background); a matching shaded dome below it is the *body*; dark-brown silhouette layer removed entirely. Supersedes the round-1 "silhouette-inside-the-circle" engineering fix.
-- **Collapsed-sidebar polish** — when collapsed, only the orange `+` stays visible at the top; gear / profile-icon / top-chevron all `display: none`. The expand-handle tab moves from vertical-centre to `top: 0.9rem` so it visually takes over the chevron's role.
-- **Card title highlight (3 iterations today)** — final shape: per-line bands with transparent top/bottom margins via `linear-gradient(transparent 12%, accent 12%, accent 88%, transparent 88%)` + `box-decoration-break: clone`. Iterations were (a) raise gradient stop 60%→40% (still bottom-anchored band), (b) full-coverage paint (made adjacent lines visually merge), (c) per-line bands with transparent margins (current).
+- **Card title highlight (3 iterations)** — final shape: per-line bands with transparent top/bottom margins via `linear-gradient(transparent 12%, accent 12%, accent 88%, transparent 88%)` + `box-decoration-break: clone`.
 
 ### v1 slice scope (unchanged)
 
@@ -47,21 +47,20 @@ Transient → 3 retries with exponential backoff (1s/4s/16s); permanent → no r
 2. **Ritual fit.** Replace doomscrolling without becoming another "must check" app. Load-bearing through build.
 3. **Home page intentionality.** "Anything AI recommended" is the v1 default; the question of *what should the home page intentionally show* (unread-only? today's-only? hand-curated?) is provisional — see [decisions.md → 2026-05-21 — Home cards stay unchanged](decisions.md). Affects the read-state dimming idea ([ideas.md → UI/UX](ideas.md)).
 4. **iframe vs. recommendation-surface leak.** Not relevant in v1 (no YouTube). Tracked for v2.
-5. **Add-source affordance.** The orange `+` button in the sidebar is wired but currently a no-op — open question whether to reuse the source-edit modal pattern for *creating* sources or wait until the schema-driven discovery flow lands. Noted as a follow-on in [decisions.md → 2026-05-21 — Sources are user-editable from the UI](decisions.md).
+5. **Add-source affordance.** The orange `+` button in the sidebar is wired but currently a no-op. **Now scheduled** to land after refresh + real-world test, before YouTube (see *Next steps*). Will reuse the source-edit modal pattern with empty fields — the modal partial was structured for this from the start.
 
 ## Next steps
 
 In order:
 
-1. **User browser-check round 2** — open `localhost:8000`, retest the UI iteration items (sidebar collapse animation feel, apple sizing, sans/serif balance, expand-handle position when collapsed, per-line title highlights, content-page plain block, thumbs, selection → note flow, source-edit modal). Flag remaining issues.
-2. **UI fix iteration round 2** based on user feedback (likely 1 round, smaller scope).
-3. **Wire `refresh` subcommand** — ingest + summarize + persist to DB; includes failure-recovery retry policy + `consecutive_failures` / `last_error_*` population on sources. This is where the in-memory fakes (notes / favourites / highlights) become real schema.
-4. **Real-world test** + fix top 1–2 issues.
-5. **Next session:** YouTube/Struthless (`yt-dlp` + transcript pipeline); real notes/favourites/highlights schema migration.
+1. **Wire `refresh` subcommand** — execute the locked 10-step plan from the `/plan-feature` cluster. New `src/aifeeder/refresh.py` orchestrator (fetch_feed → `INSERT OR IGNORE` new items → summarize *only* `status='pending'` items → persist summary + cost_log + flip status to `'processed'`); failure classification by exception type (transient/permanent/content/unknown) with in-process retry (3x exp backoff 1s/4s/16s); per-item commit boundary; populate `consecutive_failures` (reset on source-fetch success) + `last_error_at/message`. CLI flags: `--per-source 10` default, `--dry-run` (no AI, no DB writes), `--quiet` (one-line per item). Verbose preview-style detail is the default. Replace [`cli.py:111`](../src/aifeeder/cli.py#L111) `NotImplementedError`. **Note on `INSERT OR IGNORE` semantics:** RSS items are deduped by `(source_id, external_id)`, so already-processed items are never re-summarized — AI cost is bounded by RSS publish rate, not DB size.
+2. **Real-world test** — delete DB, re-`init`, `aifeeder refresh`, open `serve`, use daily for a few days. Fix top 1–2 issues.
+3. **Source-add UI** — wire the orange `+` button to open the source-edit modal with empty fields. Reuses the modal pattern + `web/writes.py` (add `insert_source(name, url, why)`); same `.modal-error` flow for duplicate-URL collisions. No new architecture.
+4. **YouTube/Struthless session** — `yt-dlp` transcript pipeline; iframe player in reader (per [decisions.md → 2026-05-20 YouTube playback iframe](decisions.md)); migrate notes / favourites / highlights from `web/fakes.py` in-memory dicts to real schema tables (same session — they're coupled because real items + real engagement become meaningful together).
 
 ## Gotchas / quirks
 
-- **UI iteration round 1 verified server-side, not visually verified.** Smoke test = all routes 200 + HTML structure + persistence + error paths correct. Browser visual pass (animation timing, apple sizing, sans/serif balance, modal backdrop blur, selection-popup placement) still owed by user.
+- **UI iteration round 1 + 2 done.** Round 2 verdict from user: "UI is passable, move on" — no further tweaks before refresh wiring.
 - **Modal pattern is the in-house convention.** `partials/source_modal.html` + `.modal-backdrop` + `.modal-card` + Esc/click-outside/cancel close + `HX-Refresh: true` on save. Future modals reuse this shape rather than inventing a new one.
 - **`web/writes.py` is the first real UI-→-DB write path.** `repo.py` stays read-only by design; `fakes.py` stays for in-memory fakes (notes/favourites/highlights). New UI writes that need real persistence go in `writes.py`.
 - **`sources.url` carries a `UNIQUE` constraint.** Editing a source's URL to one already used by another source raises `sqlite3.IntegrityError`; the route catches this and re-renders the modal with a `.modal-error` callout (no 500). Worth remembering when wiring `refresh` (which also inserts sources via `INSERT OR IGNORE`).
@@ -82,4 +81,4 @@ In order:
 - **Completeness rule for decisions** — every concrete decision reached must land in decisions.md (A) or engineering-decisions.md (B) the same turn, not only the conversation log. See [CLAUDE.md → Completeness rule](../CLAUDE.md#completeness-rule--no-concrete-decision-lives-only-in-conversation). Heavily exercised today (6 A-entries + 16 B-entries logged across 5 user turns).
 - **IDE flags `schema.sql` errors** — false positives from the MSSQL language server; file is valid SQLite.
 
-_Last updated: 2026-05-22 — UI iteration round 1 + source-edit modal (first UI-→-DB write path) complete; paused for browser-check round 2 before wiring `refresh`._
+_Last updated: 2026-05-22 — Browser-check round 2 passed; `aifeeder refresh` plan-feature cluster locked (5 tradeoffs + 7 open-Q answers); awaiting code start. Source-add UI now scheduled before YouTube._
