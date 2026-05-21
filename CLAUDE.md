@@ -69,7 +69,12 @@ If I never return to the parent topic, leave the branch open — that itself is 
 
 ## Decisions log
 
-When a non-trivial decision lands — anything architecturally-shaping, hard to reverse, or where future-me will wonder "wait, why did we do it that way?" — append an entry to [`docs/decisions.md`](docs/decisions.md). Skip purely tactical / reversible-in-10-minutes calls.
+Two files, two categories — see the [A/B/C design decision spectrum](docs/workflow-notes.md#design-decision-spectrum-abc-split) in workflow-notes.md for the full taxonomy.
+
+- **[`docs/decisions.md`](docs/decisions.md)** — A-category: product, mission, UX, AI behaviour, scope, privacy, model placement, cost-vs-quality tradeoffs. The user co-decides or owns these; you escalate before deciding.
+- **[`docs/engineering-decisions.md`](docs/engineering-decisions.md)** — B-category: routine engineering choices (libraries, schema details, project layout, error handling, etc.). You decide and brief the user with a one-liner; user can silently approve, comment, or push back. See *Engineering decisions log* below for the protocol.
+
+When a non-trivial A-category decision lands — anything architecturally-shaping, hard to reverse, or where future-me will wonder "wait, why did we do it that way?" — append an entry to [`docs/decisions.md`](docs/decisions.md). Skip purely tactical / reversible-in-10-minutes calls.
 
 ### Cross-reference convention (required)
 
@@ -98,6 +103,40 @@ If the decision and an ideas.md entry are linked, also update the ideas.md entry
 ```
 
 Append-only, oldest at top, newest at bottom. When superseding a prior decision: append a new entry with `**Supersedes:** YYYY-MM-DD — [name]` and update the old entry's status to `Superseded by YYYY-MM-DD — [name]`. Don't rewrite old reasoning — the trail of *why we changed our mind* matters.
+
+## Engineering decisions log (B-category)
+
+When making routine engineering choices (libraries, schema details, project layout, error-handling strategy, etc. — see [A/B/C split](docs/workflow-notes.md#design-decision-spectrum-abc-split) for the full taxonomy), surface them inline as a one-liner:
+
+> **Engineering choice:** <what + why + main alternative considered>
+
+This briefs the user without blocking the flow. They can silently approve, comment, or push back.
+
+### What gets logged to `docs/engineering-decisions.md`
+
+- **Every B-category brief** — what was picked, alternatives considered, the user's response (silent approval / approved with comment / pushed back).
+- **Especially: anything the user pushed back on** — what they objected to, how it resolved, the reason. This is the most important class to capture so the same misunderstanding doesn't repeat.
+- Silent approvals get a short one-line entry too — the file is the audit trail of *all* engineering choices, not just contested ones.
+
+### Entry shape
+
+```
+## YYYY-MM-DD — [Decision name]
+
+**My choice:** [what + one sentence why]
+
+**Alternatives considered:** [main alternative(s) + why not]
+
+**User response:** silent approval | approved with comment: "..." | pushed back
+
+**(If pushed back) Resolution:** [final answer + reason]
+
+**Refs:** conversation → [...]
+```
+
+### Escalate B → A when the choice touches user-facing concerns
+
+If a B-category decision turns out to affect any of: mission alignment (mindful, not engagement-bait), UX flow / interaction / empty states, feature scope, AI behaviour (prompts / output shape / tone), RAG / retrieval strategy, model placement (cloud vs. local, provider choice), privacy posture, or cost-vs-quality tradeoffs → escalate. Pause, surface options, let the user choose. Don't pre-commit to an engineering pattern that locks in an A-category answer.
 
 ## Tutor mode
 
@@ -148,7 +187,7 @@ The format for each entry is: a short tag, a detect-from clause, and the recomme
 
 - **[parallel-sessions]**
   - **Detect from:** I mention starting / opening another Claude Code session, working in a second terminal on this codebase, running parallel agents on this project, doing branch-divergent feature work, or you observe I'm already inside a second session.
-  - **Deliver:** Now is the moment to choose between Option A and Option C from the *Parallel sessions (deferred)* section of [`docs/workflow-notes.md`](docs/workflow-notes.md). Option C (`git worktree add`) if the parallel work is on an independent branch. Option A (split `docs/conversation.md` into per-session files routed by the Stop hook on `session_id`, with an auto-maintained `INDEX.md`) if both sessions share the same checkout. Offer to implement the chosen one.
+  - **Deliver:** If the parallel work is on an *independent feature branch*, recommend `git worktree add` (see the *Parallel sessions* section in [`docs/workflow-notes.md`](docs/workflow-notes.md)) so each session has its own `.claude/` and `docs/`. If both sessions share the same checkout, flag this: per-session conversation logs route themselves (each Claude writes to its own `docs/conversation/<date>_<short-id>.md`), but [`docs/state.md`](docs/state.md) is single-writer — concurrent `/state` runs can clobber. Suggest serialising state.md updates between the two sessions.
 
 ### Turning tutor mode off
 

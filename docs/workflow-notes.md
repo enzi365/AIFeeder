@@ -10,7 +10,7 @@ A living reference for collaborating effectively with Claude Code on this projec
 |---|---|---|---|
 | `CLAUDE.md` | What rules / conventions always apply here? | Persistent, slow-changing | You + Claude, deliberately |
 | `docs/state.md` | Where are we *right now*? | Mutable, refreshed at session boundaries | Claude, via `/state` |
-| `docs/conversation/<date>_<id>.md` | How did we get here? | Append-only per-session log | Stop hook, every turn |
+| `docs/conversation/<date>_<id>.md` | How did we get here? | Append-only per-session log | Claude, every turn (per CLAUDE.md) |
 | `docs/decisions.md` | *Why* did we choose X over Y? | Append-only, cross-referenced to ideas.md + session log | Claude, when a real decision lands |
 | `docs/ideas.md` | What did we defer, and why? | Append-only; entries promoted out or expanded | Claude, when scope cuts happen |
 | `docs/workflow-notes.md` *(this file)* | How do I work with Claude well? | Living reference | You + Claude |
@@ -18,6 +18,68 @@ A living reference for collaborating effectively with Claude Code on this projec
 `state.md` is the "where" file, `conversation/` is the "how we got here" file, `decisions.md` is the "why" file, `ideas.md` is the "what we didn't do (yet)" file. They don't overlap; each catches a different failure mode of working with an LLM.
 
 **decisions.md ↔ ideas.md are deliberately bidirectional.** A decision to defer is also an entry in ideas.md; a decision to pick approach A over B should link to the deferred B in ideas.md. The cross-reference convention is mandated in [`CLAUDE.md`](../CLAUDE.md#decisions-log).
+
+---
+
+## Design decision spectrum (A/B/C split)
+
+A framework for which decisions you weigh in on vs. which Claude makes autonomously. Lets you "own" the product without getting bogged down in every library pick.
+
+### A — you decide (Claude always escalates)
+
+Anything that shapes user experience or product identity. If Claude assumes here, it'll get it wrong because these reflect *your* values, not engineering best-practice.
+
+- Mission alignment (mindful, not engagement-bait)
+- UX / UI / flow decisions, empty states, screen-level interactions
+- Features in/out of scope
+- AI behaviour (prompts, output shape, tone, ambiguity handling)
+- RAG / retrieval / context strategy
+- Model placement (cloud vs. local, provider choice)
+- Privacy posture
+- Cost-vs-quality tradeoffs
+- Content-type handling
+- Mission-vs-pragma tensions (e.g. iframe leaking YouTube recommendations)
+
+Logged in [`docs/decisions.md`](decisions.md).
+
+### B — Claude decides, briefs you (you can override)
+
+Routine engineering choices with sensible defaults. Claude makes the call, surfaces it inline as a `**Engineering choice:** <what + why + main alternative>` one-liner. You can silently approve, comment, or push back.
+
+- Language / framework / library picks
+- Schema structure (unless it touches scope — that escalates to A)
+- Project layout, file organisation, naming conventions
+- Error handling / retry strategies (unless UX-visible)
+- Logging, testing approach, build tooling
+- Specific library versions, dep management
+
+Logged in [`docs/engineering-decisions.md`](engineering-decisions.md). Includes silent approvals and pushbacks-with-resolutions both.
+
+### C — Claude just does (no briefing)
+
+- Variable / function names, code style
+- Internal patterns (when to extract a helper, when to inline)
+- Auto-formatter, linter config
+- Anything reversible in 5 minutes
+
+Not logged anywhere — captured implicitly in git history.
+
+### Pre-session checklist (you run on yourself)
+
+A 90-second pre-flight before a build session. Catches "I forgot to tell you X":
+
+1. **Mission check.** Anything in this session that risks the mindful posture? Anything that should not feel TikTok-like?
+2. **UX check.** New screen / interaction / empty state / error message? You have a take?
+3. **AI behaviour check.** Any prompt being written or changed? Want to see it before Claude runs it?
+4. **Scope check.** Anything Claude might "naturally" add that you actually want deferred?
+5. **Cost / privacy check.** Anything that changes what data goes where, or what costs more?
+6. **Mission-vs-pragma tension.** Any place we're trading mission purity for build speed? Worth surfacing now?
+
+If anything fires, tell Claude up front. If nothing fires, say "go" and Claude executes with B-category briefings as they land.
+
+### Escalation rule
+
+If Claude's about to make a B-category choice and it turns out to touch any A-category dimension → escalate. Don't pre-commit to an engineering pattern that locks in an A-category answer.
 
 ---
 
@@ -64,7 +126,7 @@ Mental model: slash commands = "*you* fire this prompt." Skills = "*Claude* know
 | `/schedule` | Cron-style scheduled remote agents. | Recurring automated tasks (daily report, weekly cleanup). |
 | `/fewer-permission-prompts` | Scans transcripts and auto-allowlists safe tool calls. | After your first real coding session, to cut prompt fatigue. |
 | `/claude-api` | Auto-invoked when you work with the Anthropic SDK. | If AIFeeder ends up using the Claude API — relevant for this project. |
-| `/update-config` | Modifies `settings.json` (used to wire up the Stop hook here). | When you want hooks, permissions, or env vars changed. |
+| `/update-config` | Modifies `settings.json` — permissions, hooks, env vars. | When you want hooks, permissions, or env vars changed. |
 
 Skills you don't need to think about: Claude auto-invokes the right one when relevant. Worth scanning the list once just so you know what's possible.
 
@@ -83,6 +145,21 @@ Events worth knowing:
 - `UserPromptSubmit` — fires when you hit send. Good for routing or augmenting prompts.
 
 Hooks can be `command` (shell), `prompt` (LLM check), `agent` (subagent runs), `http` (POST to a URL), or `mcp_tool` (call an MCP server). Most of the time you want `command`.
+
+---
+
+## Per-turn logging: hook → main Claude *(May 2026)*
+
+Originally a `Stop` hook spawned a Haiku call (`claude -p`) to read the JSONL transcript and append a per-turn entry. Two problems killed it:
+
+1. **Non-deterministic CLI crash.** `claude -p` crashed during init ~50% of the time with `TypeError: Cannot read properties of null (reading 'effortLevel')` — inside Claude Code's minified bundle. No flag combination defeated it reliably. A 5-attempt retry loop masked the failures but didn't fix them.
+2. **Wrong-exchange picks.** Even when the call succeeded, Haiku had to read a >500 KB transcript it didn't participate in and guess "the most recent exchange." It sometimes picked the wrong one — the model that *had* the intent was main Claude, not the one writing the log.
+
+Now: main Claude writes entries directly via `Write` / `Edit` as the last action of every turn. [`CLAUDE.md`](../CLAUDE.md)'s *Conversation log* section spells out the file-path and seed-header convention. Tradeoff: no automated safety net — relies on Claude remembering. Worth it for higher-quality entries (full intent in context) and zero CLI flakiness.
+
+General pattern: prefer in-context work over delegating to a headless model when the in-context model has strictly more information. Hooks are still the right tool for *deterministic* automation (formatters, linters, gate checks) — just not for tasks that depend on understanding intent.
+
+Decision detail in [`conversation/2026-05-20_b670.md`](conversation/2026-05-20_b670.md).
 
 ---
 
@@ -144,7 +221,7 @@ For non-trivial implementations, ask Claude to plan first — or use `/plan-feat
 
 Running multiple Claude Code sessions against this codebase concurrently breaks two assumptions: that the conversation log is a single thread, and that `docs/state.md` has one writer. Two patterns, picked by whether the work is branch-divergent:
 
-**Option A — Per-session conversation files, shared `state.md`** *(implemented — same-checkout parallel work)*
+**Option A — Per-session conversation files, shared `state.md`** *(default — same-checkout parallel work)*
 
 ```
 docs/
@@ -155,9 +232,7 @@ docs/
   state.md                                ← canonical, single source of truth
 ```
 
-The Stop hook routes by `session_id` from its stdin payload. Filename pattern: `<date>_<short-session-id>[_<topic-slug>].md`. `state.md` stays singular — `/state` reads-then-merges so concurrent sessions take turns rather than clobber.
-
-Implementation note: nested `claude -p` invocations from the hook spawn their own (small) sessions whose Stop hooks also fire. The env-var recursion guard isn't reliable across that boundary, so the hook also filters by transcript size (skips anything under 10 KB). Watch [`.claude/hooks/debug.log`](../.claude/hooks/debug.log) if entries stop appearing.
+Filename pattern: `<date>_<short-session-id>[_<topic-slug>].md`. Each Claude session writes to its *own* per-session file (per CLAUDE.md's *Conversation log* section), so concurrent sessions never collide on the log — routing is automatic, no hook required. `state.md` stays singular and is the real hazard: concurrent `/state` runs from two sessions can clobber each other. Serialise — have one session finish `/state` before the other starts.
 
 **Option C — Git worktrees** *(deferred — for branch-divergent feature work)*
 
@@ -181,7 +256,7 @@ This is *not* a replacement for `state.md` or `conversation.md`. Memory is about
 | Practice | Status | Where |
 |---|---|---|
 | `CLAUDE.md` with conversation-log instruction | ✅ | [`CLAUDE.md`](../CLAUDE.md) |
-| Stop hook auto-appending to per-session conversation log (Haiku) | ✅ | [`.claude/hooks/log-conversation.sh`](../.claude/hooks/log-conversation.sh), [`.claude/settings.json`](../.claude/settings.json) |
+| Per-turn conversation logging by main Claude (was: Stop hook + Haiku) | ✅ | [`CLAUDE.md`](../CLAUDE.md) — *Conversation log* section |
 | Per-session conversation files in `docs/conversation/` (Option A) | ✅ | [`docs/conversation/`](conversation/) |
 | `/state` slash command | ✅ | [`.claude/commands/state.md`](../.claude/commands/state.md) |
 | `/resume` slash command | ✅ | [`.claude/commands/resume.md`](../.claude/commands/resume.md) |

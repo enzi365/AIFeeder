@@ -65,7 +65,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Tradeoff:** Twitter (and other RSS-less sources) is real signal we're leaving on the floor. Newsletters likewise. We accept this for scope.
 
-**Refs:** ideas.md → [Twitter / non-RSS source support](ideas.md#twitter--non-rss-source-support), [Newsletter email forwarding](ideas.md#newsletter-email-forwarding), [Page-diff ingestion](ideas.md#page-diff-ingestion-changedetectionio-reference), [Agent-driven headless-browser discovery](ideas.md#agent-driven-headless-browser-discovery); state.md → *Recent decisions › MVP scope*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md) (technical-decisions narrowing turn).
+**Refs:** ideas.md → [Twitter / non-RSS source support](ideas.md#twitter--non-rss-source-support), [Newsletter email forwarding](ideas.md#newsletter-email-forwarding), [Page-diff ingestion](ideas.md#page-diff-ingestion-changedetectionio-reference), [Agent-driven headless-browser discovery](ideas.md#agent-driven-headless-browser-discovery); state.md → *Recent decisions › MVP scope*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md) (technical-decisions narrowing turn).
 
 ---
 
@@ -79,7 +79,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Tradeoff:** iframe end-cards reintroduce the YouTube recommendation surface — the exact thing the custom player was designed to block. Mitigations available (`rel=0`, `modestbranding=1`) but end-cards are creator-controlled. **Track real-user impact in MVP** — if users tell us they get pulled into YouTube via end-cards, the custom player moves back on the table.
 
-**Refs:** ideas.md → [Audio + transcript + thumbnail YouTube mode](ideas.md#audio--transcript--thumbnail-youtube-mode); state.md → *Recent decisions › MVP scope*, *Open questions › iframe vs. recommendation-surface leak*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md) (iframe Q&A).
+**Refs:** ideas.md → [Audio + transcript + thumbnail YouTube mode](ideas.md#audio--transcript--thumbnail-youtube-mode); state.md → *Recent decisions › MVP scope*, *Open questions › iframe vs. recommendation-surface leak*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md) (iframe Q&A).
 
 ---
 
@@ -93,7 +93,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Tradeoff:** Older / non-English / niche content disproportionately lacks captions and gets dropped. Acceptable for v1.
 
-**Refs:** ideas.md → [Whisper fallback for YouTube transcripts](ideas.md#whisper-fallback-for-youtube-transcripts); state.md → *Recent decisions › MVP scope*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md).
+**Refs:** ideas.md → [Whisper fallback for YouTube transcripts](ideas.md#whisper-fallback-for-youtube-transcripts); state.md → *Recent decisions › MVP scope*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md).
 
 ---
 
@@ -107,7 +107,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Tradeoff:** Some users will expect the richer surface and find the MVP version thin. That's fine — naming is "library", not "personal knowledge base".
 
-**Refs:** ideas.md → [The "v2 cluster"](ideas.md#the-v2-cluster--richer-library-journal-intellectual-challenge-quests); state.md → *Recent decisions › MVP scope*, *Features deferred*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md) (library dual-meaning split).
+**Refs:** ideas.md → [The "v2 cluster"](ideas.md#the-v2-cluster--richer-library-journal-intellectual-challenge-quests); state.md → *Recent decisions › MVP scope*, *Features deferred*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md) (library dual-meaning split).
 
 ---
 
@@ -121,7 +121,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Tradeoff:** Classification can be wrong; mis-tagging risks user trust. Need a confidence threshold and probably a user-override.
 
-**Refs:** state.md → *Recent decisions › MVP scope*, *Open questions › content-type prompt design*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md).
+**Refs:** state.md → *Recent decisions › MVP scope*, *Open questions › content-type prompt design*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md).
 
 ---
 
@@ -137,7 +137,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Open follow-on:** content-type-adaptive prompt design (open question 1). E.g. for a debate, key points are framed as "idea X vs. idea Y", not separate pro/con bullets. Needs a research pass to define major content-format categories and per-type prompt shapes.
 
-**Refs:** state.md → *Recent decisions › MVP scope*, *Open questions › content-type prompt design*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md).
+**Refs:** state.md → *Recent decisions › MVP scope*, *Open questions › content-type prompt design*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md).
 
 ---
 
@@ -151,7 +151,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Tradeoff:** Bad prompt cadence becomes nagging. Need careful frequency capping. Also: users may *want* their "why" stable — drift isn't always a problem.
 
-**Refs:** ideas.md → [Periodic "why" revisits — insight-shift trigger](ideas.md#periodic-why-revisits--insight-shift-trigger); state.md → *Recent decisions › MVP scope*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md).
+**Refs:** ideas.md → [Periodic "why" revisits — insight-shift trigger](ideas.md#periodic-why-revisits--insight-shift-trigger); state.md → *Recent decisions › MVP scope*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md).
 
 ---
 
@@ -165,7 +165,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Tradeoff:** Retention metrics (DAU, session length) will look bad by mainstream standards. That's the point — we measure mission-aligned metrics (sources curated, items filtered with correct reason, user-reported value), not engagement. Investors / collaborators who expect engagement-style dashboards need to be set straight up front.
 
-**Refs:** state.md → *Recent decisions › MVP scope*, *Gotchas › Never instrument engagement metrics*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md).
+**Refs:** state.md → *Recent decisions › MVP scope*, *Gotchas › Never instrument engagement metrics*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md).
 
 ---
 
@@ -179,7 +179,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Tradeoff:** Distribution is deferred, *not solved*. If we later go public, we'll need to retrofit: auth, schema migration for multi-tenancy, billing, hosting, ToS / privacy policy — roughly 15–25 hours of engineering plus operational setup. We explicitly accept this cost rather than pay forward-compat complexity now for a future that may not happen.
 
-**Refs:** ideas.md → [Public distribution (auth, multi-tenancy, billing, hosting)](ideas.md); state.md → *Recent decisions › MVP scope*; conversation → [2026-05-20 session](conversation/2026-05-20_360d.md) (local-only scope-cut turn).
+**Refs:** ideas.md → [Public distribution (auth, multi-tenancy, billing, hosting)](ideas.md); state.md → *Recent decisions › MVP scope*; conversation → [2026-05-20 session](conversation/2026-05-20_b670.md) (local-only scope-cut turn).
 
 ---
 
@@ -195,7 +195,7 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 **Important caveat — content-type tag stays.** Content-type classification still happens (as a parallel output of the summarization call, or a tiny separate classification sub-call) and surfaces as a tag in the list view. The classification is **display-only** in v1 — it does NOT route the summary prompt.
 
-**Refs:** ideas.md → [Content-type-adaptive prompt design](ideas.md); state.md → *Recent decisions › MVP scope* (single general prompt + classification tag display); conversation → [2026-05-20 session](conversation/2026-05-20_360d.md) (adaptive-prompting defer turn).
+**Refs:** ideas.md → [Content-type-adaptive prompt design](ideas.md); state.md → *Recent decisions › MVP scope* (single general prompt + classification tag display); conversation → [2026-05-20 session](conversation/2026-05-20_b670.md) (adaptive-prompting defer turn).
 
 ---
 
