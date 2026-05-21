@@ -289,4 +289,99 @@ Entries are chronological by *when the decision was made*. Entries dated 2026-05
 
 ---
 
-_Last updated: 2026-05-21 — added 4 A-decisions from the /plan-feature open-Q resolution turn (users table B→A escalation, no-card-change on feedback, sidebar defaults, no-thumbnails-v1). Establishes the [completeness rule](../CLAUDE.md#completeness-rule--no-concrete-decision-lives-only-in-conversation) cadence: every answered open Q now lands here or in engineering-decisions.md, not just in the conversation log._
+## 2026-05-21 — Feedback affordance: thumbs up/down (supersedes "icon arrows not thumbs")
+
+**Status:** Accepted — **Supersedes:** 2026-05-20 UX-lock line "up/down arrows as icons NOT thumbs"
+
+**Decision:** The content-page feedback buttons use thumbs-up / thumbs-down icons. Replaces the up-arrow / down-arrow icons that were locked during the 2026-05-20 UX design pass.
+
+**Why:** First browser-check of the rendered UI; the user explicitly asked for thumbs. The original rationale for arrows-not-thumbs was that thumbs felt social-media-coded; in practice the user found the universal feedback mental model (thumbs = approve/disapprove) cleared faster than re-learning that arrows mean the same thing. The arrows-as-icons distinction wasn't carrying the weight the design pass assumed it would.
+
+**Tradeoff:** Thumbs do carry a tiny TikTok/YouTube residue. Mitigated by the *callout* that follows the thumbs (which-why-fit chips / off-topic chips) — the friction lives in the follow-up, not in the gesture, so the mainstream-feeling primitive still hangs off a mindful workflow. Mission heuristic ("if it would feel at home in TikTok, it doesn't belong here") survives because the *interaction model around the thumbs* is what makes this distinct, not the icon shape.
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 browser-check feedback turn); engineering-decisions.md → *2026-05-21 — UI iteration round 1 (cluster)*.
+
+---
+
+## 2026-05-21 — Content-page "why" callout: plain block, not sticky-note
+
+**Status:** Accepted — **Supersedes:** 2026-05-20 UX-lock line "sticky-note 'why' callout above body (slight rotation, soft shadow, warm yellow)"
+
+**Decision:** Replace the rotated yellow sticky-note "why" callout on the content page with a plain rectangular block (same card cream / paper background as the rest of the page). The block carries `purpose` + `key_points` (the same fields surfaced on the home-card hover overlay). Drop the "worth your time" copy and drop `relevance_reason` from this block — relevance_reason already appears on the home card itself.
+
+**Why:** First browser-check; user found the sticky-note styling distracting in the reading context (rotation + shadow + warm-yellow contrast pulled the eye away from the article body). The plain-block treatment keeps the orientation information available without competing with the reader column. Drops `relevance_reason` because by the time the user is on the content page they've already seen + acted on it (clicking through is the implicit "yes, this why fit me").
+
+**Tradeoff:** Loses some of the painterly journal-feel — the sticky-note was one of the elements that distinguished this from a generic reader app. Accepted: the journal-feel survives in the home-card grid, the sidebar persona avatar, the loading-page circles. The reader column was the wrong place to spend whimsy budget; the article body deserves the focal weight.
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 browser-check feedback turn).
+
+---
+
+## 2026-05-21 — Sans-serif body typography (Source Sans 3) alongside Fraunces titles
+
+**Status:** Accepted — **Refines:** the 2026-05-20 typography lock (Fraunces display + Source Serif Pro body)
+
+**Decision:** Body text gets a sans-serif treatment via **Source Sans 3** (Adobe, same designer / metrics as Source Serif Pro). Specifically:
+- Sans-serif: card `why` text, content reader body, hover overlay descriptions (under "Purpose" + "Key points" headers), `relevance_reason`-equivalent prose.
+- Stays serif (Fraunces or Source Serif Pro): all titles (`h1`–`h4`), tag pills (`read-time`, `content_type_tag`), section headers like "Purpose" / "Key points", sticky monogram letters, sidebar nav labels.
+
+**Why:** First browser-check; user found extended serif body text hard to read in the card context (small font + tight spacing) and the reader context (length × line-height). Source Sans 3 keeps the design cohesion (same family as the existing Source Serif Pro) while improving readability at the small + dense sizes. Titles + headers stay serif because that's where Fraunces does its mindfulness-coded work — sans-serif everything would drift the app toward a generic reader.
+
+**Tradeoff:** One extra Google Fonts request (Source Sans 3 weights). Mild increase in CSS surface area to namespace which elements stay serif vs. go sans. Accepted: cohesion + readability are both load-bearing for the mission.
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 browser-check feedback turn); engineering-decisions.md → *2026-05-21 — UI iteration round 1 (cluster) › Source Sans 3*.
+
+---
+
+## 2026-05-21 — Apple yes/maybe indicators on home cards
+
+**Status:** Accepted
+
+**Decision:** Each home-feed card carries a small inline-SVG apple icon on the bottom-right corner. Two states keyed to `relevance_verdict`:
+- **yes** → whole apple (red body with gradient + green leaf)
+- **maybe** → 3/4-eaten apple (same red gradient + green leaf, bite shape on the right side)
+- **no** → no apple rendered (yes/maybe are the only verdicts surfaced on home anyway per `list_feed_items()` filter)
+
+**Why:** User wants a quick visual signal of how strongly the AI recommends each item, beyond the existing text-only verdict-via-presence ("if it's here, it's yes or maybe"). Apples carry mission-aligned connotations (the orchard / a fruit of consumption, the bitten apple as "engaged-with-but-not-finished" / "this one's worth a partial taste"). Mission-aligned because they signal *health* of the recommendation rather than urgency / unread-counter / progress-bar gamification.
+
+**Tradeoff:** A discrete signifier per card adds tiny visual weight to the masonry grid (mitigated by small size + bottom-right placement, away from title/why focus). Inline SVG carries the same cost as the existing icon macros — no asset pipeline burden. Not a thumbnail (the 2026-05-21 no-thumbnails decision still holds: this is a *discrete* signifier, not a content preview).
+
+**Refs:** decisions.md → *2026-05-21 — Cards are colour-only in v1; no thumbnail / snapshot images* (compatible — apple is a signifier, not a content preview); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 browser-check feedback turn).
+
+---
+
+## 2026-05-21 — In-text highlighting + quote-attached notes (v1 in-memory fake)
+
+**Status:** Accepted — **B→A escalation** (originally a UX feedback item; touches feature scope + persistence model)
+
+**Decision:** On the content page, the user can select text in the reader column, click a floating "+ Note" button that appears near the selection, and the selected text becomes the *quote* attached to a new note. The selection then renders as a persistent highlight (yellow `<mark>`) every time the user re-opens the same article. V1 stores highlights + quoted notes in the existing in-memory fake module (`web/fakes.py`) — wiped on uvicorn reload. Real persistence (SQLite table) lands with the `refresh` wire-up.
+
+**Why:** Reading + note-taking are the same gesture for this user, and the v1 note panel as-designed treated them as two: open the panel, type the title, type the body, no link to *what triggered* the note. The highlight → quote → note chain closes that loop. Persistent highlights matter because the second time the user opens an article they want to see *where they were* — re-reading is a real workflow for the target audience (researchers, deep readers).
+
+**Tradeoff:** Adds JS surface (selection capture + floating button + post-save highlight injection) beyond the ~80 LOC vanilla-JS budget set in the /plan-feature pass. Adds a fake storage shape (`highlights: list[{quote, note_index}]` per item_id) that has to migrate cleanly to a real schema when refresh lands. Re-rendering highlights uses naïve substring matching ("first occurrence of the quoted text in the reader's paragraphs") — fails if the same exact phrase appears twice. Accepted for v1; the corner case can be patched with offset-tracking when real persistence lands.
+
+**Why B→A:** Originally framed as a small UX add. Escalated because (a) it adds a feature *scope* item not in the locked v1 list, (b) it pre-shapes a persistence schema for highlights that the eventual refresh wire-up has to honour, (c) it changes the note-taking *interaction model* from "compose a free-form note" to "quote-anchored notes" as the primary form.
+
+**Refs:** decisions.md → *2026-05-20 — Two summary outputs: key points + content index, "glimpse not substitute"* (highlights are the user's *own* glimpses-into-the-content, parallel to the AI's); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 browser-check feedback turn); engineering-decisions.md → *2026-05-21 — UI iteration round 1 (cluster)*.
+
+---
+
+## 2026-05-21 — Sources are user-editable from the UI (first UI-→-DB write path)
+
+**Status:** Accepted
+
+**Decision:** Clicking a source row in the sidebar opens a centered modal (backdrop blurs the main column but **not** the sidebar) with two fields: the source URL + a single "why" textarea with a persistent helper hint *above* it asking what they value from the source and what they'd rather not receive. Save persists to the real `sources` table (`UPDATE sources SET url = ?, why = ? WHERE id = ?`); Cancel + Esc + click-outside-the-modal all dismiss without saving. This is the **first UI-driven write to a real schema table** in the v1 app (notes / favourites / highlights all use in-memory fakes; sources writes were previously only done by `aifeeder init`).
+
+**Why:** The per-source "why" is one of the two load-bearing wedges of the app (alongside thumbs-with-reasons feedback — see *~2026-05-19 — Per-source "why" + reasoned thumbs feedback*). The user *will* iterate on their whys over time as their consumption pattern matures and as the AI revisit prompts trigger (see *2026-05-20 — Periodic "why" revisits*). Forcing them to drop to a SQL prompt or re-run `init` to edit a why would break the mission rhythm. The URL is similarly mutable — sources move, change subdomains, get archived. Making both editable from the UI is the minimum-viable surface that respects the why's centrality.
+
+**Tradeoff:** Introduces a **UI-→-DB write path** that didn't exist in the v1 plan, which has knock-on effects: (1) a new `web/writes.py` module breaks ground that the read-only `repo.py` deliberately avoided — going forward, other UI features (delete source, archive item, mark-read) have a natural home but also a natural temptation; (2) no undo / version history — accidental edit overwrites the original why with no recovery (acceptable for single-user v1 local, would need rethink for public-distribution); (3) the modal pattern (backdrop + centered card + Esc/click-outside close) becomes the in-house modal convention — future modals should reuse the same shape rather than re-invent.
+
+**Why this is A-category, not B:** Touches **scope** (adds a user-facing write surface not in the v1 plan), **UX** (introduces the modal pattern), and indirectly **mission** (makes the wedge feature ergonomic). The single-textarea-with-hint copy choice + the backdrop-blur-except-sidebar visual treatment are A-shaped too — they shape how the user *feels* about editing their whys, which is load-bearing.
+
+**Open follow-ons:** (a) The orange `+` add-source button in the sidebar should probably eventually use the same modal pattern for *creating* a source (not just editing) — not built today, but the modal partial is structured so it could be reused with empty fields. (b) Delete-source affordance not added — user explicitly didn't ask for it. (c) Modal-pattern lives in [main.css](../src/aifeeder/static/css/main.css) for now; if a third modal lands, factor to its own `modal.css`.
+
+**Refs:** decisions.md → *~2026-05-19 — Per-source "why" + reasoned thumbs feedback (the wedge)* (this decision makes the wedge editable); decisions.md → *2026-05-20 — Local-only, single-user app for v1* (compatible — no auth concerns because single-user, but the UI-write surface adds to the public-distribution retrofit cost flagged there); engineering-decisions.md → *2026-05-21 — Source-edit modal (cluster)*; conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 source-edit modal turn).
+
+---
+
+_Last updated: 2026-05-21 — 6 A-entries from the browser-check + UI-iteration day (thumbs supersedes arrows, plain-block supersedes sticky-note, sans-serif body refines typography lock, apple verdict indicators, in-text highlighting B→A escalation, **sources editable from UI as first UI-→-DB write path**)._

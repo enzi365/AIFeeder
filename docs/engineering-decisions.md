@@ -105,4 +105,182 @@ Originally proposed as a B-choice between hardcoded "Emma", `AIFEEDER_USER` env 
 
 ---
 
-_Last updated: 2026-05-21 — backfilled stack pick + 6 B-decisions from the /plan-feature open-Q resolution turn. Sets the cadence for going forward per the [completeness rule in CLAUDE.md](../CLAUDE.md#completeness-rule--no-concrete-decision-lives-only-in-conversation)._
+## 2026-05-21 — UI iteration round 1 (cluster of B-decisions)
+
+Engineering-side resolutions from the first browser-check feedback round. Bundled together because they all came from one user-feedback turn after browsing the rendered UI. The A-category items from the same turn (thumbs supersession, sticky-note → plain block, sans typography, apple verdict indicators, in-text highlighting feature) live in [`decisions.md`](decisions.md).
+
+### a. Sidebar gets a Home nav button (above Library)
+
+**My choice:** Add a Home button + home-icon row above Library / Favourites / Notes. Active-state-aware (`active_page == 'home'`), routes to `/home`.
+
+**Alternatives considered:** Treat the app title / logo as the home affordance (rejected: not discoverable, especially when sidebar is collapsed); rely on browser back-nav (rejected: too easy to get stuck on a content page).
+
+**User response:** approved with comment: "add a home button with a home icon above the library button."
+
+### b. Settings gear icon SVG fix
+
+**My choice:** Replace the existing gear path (which rendered as a malformed blob) with a clean 6-tooth gear path that reads cleanly at 18px.
+
+**Alternatives considered:** Heroicons gear (would require introducing an icon library); Feather gear (same); inline 12-tooth (rejected: too dense at 18px).
+
+**User response:** approved with comment: "the settings gear icon button is a bit misformatted. try again."
+
+### c. Sidebar expand/collapse animation: slow from 400ms to 700ms
+
+**My choice:** Bump `--t-med` (used for the sidebar grid-template-columns transition) from 400ms to ~700ms for the sidebar-specific transition. Keep 400ms as the global default for other transitions; introduce `--t-sidebar` for this one usage.
+
+**Alternatives considered:** Globally slow `--t-med` to 700ms (rejected: would make hover lifts + reveal animations feel laggy); keep at 400ms (rejected: user explicitly flagged it as too fast).
+
+**User response:** approved with comment: "when the sidebar collapses and user presses a button so that it unravels again, make the animation slower because it's too fast right now."
+
+### d. Collapsed-sidebar expand handle (visible tab with `>`)
+
+**My choice:** When sidebar is collapsed, render a small ~24×40 px tab attached to the right edge of the sidebar (or floating off the collapsed sidebar's right border) with a `>` chevron. Click expands the sidebar. Existing chevron button at top of sidebar stays (now redundant when collapsed but useful for keyboard users / when expanded).
+
+**Alternatives considered:** Click-anywhere-on-sidebar-edge to expand (rejected: not discoverable, no visual affordance); keep the top chevron as the only expander (rejected: user explicitly wants a tab affordance).
+
+**User response:** approved with comment: "add a tab also extending out of the sidebar when it is collapsed with a > button to unravel it again."
+
+### e. Avatar SVG fix (silhouette inside the glowing circle)
+
+**My choice:** The current avatar is just a radial-gradient circle with no figure inside (the silhouette layer was collapsed to a pure inset shadow). Add a soft inline silhouette layer (head + shoulders shape) inside the circle so the persona reads as a *figure* not a *coin*. Keep the glow + pulse animation as-is — user explicitly liked those.
+
+**Alternatives considered:** Three.js / Spline embed (rejected: deferred to [ideas.md → 3D glass persona avatar](ideas.md)); Lottie illustration (rejected: asset pipeline + license complications for a v1 polish); flat icon-style avatar (rejected: too clinical, loses the warm radial gradient feel user liked).
+
+**User response:** approved with comment: "the avatar, i like the 3d looking circle right now and even the colour. but the avatar shape is all like collapsed together i think because i just see the circle."
+
+### f. Thought-bubble repositioning (around the head, not over it)
+
+**My choice:** Move the three thought-bubbles from above the avatar to wrap around its top + sides (one upper-left, one upper-right, one upper-centre but higher so it clears the head). Keep the watercolour `mix-blend-mode: multiply` translucency.
+
+**Alternatives considered:** Bubbles only on click instead of hover (rejected: user wants the hover discovery — see ideas.md for click-through to a persona page); bigger bubbles further out (rejected: would clip out of the sidebar width).
+
+**User response:** approved with comment: "the thought bubbles, i like the text within it, but it can be better spaced around the avatar's head because right now it's a bit blocked by the circle."
+
+### g. Card title style: switch from underline-illusion to solid highlight
+
+**My choice:** The current implementation uses `background-image: linear-gradient(transparent 60%, accent 60%)` which renders as a thick underline-ish band on the bottom 40% of the title text. Switch the gradient stop higher (transparent 40%, accent 40%) and saturate the colour slightly so it reads unambiguously as a highlighter strip across the lower half of each title.
+
+**Alternatives considered:** Pure `text-decoration: underline` (rejected: user explicitly said "actually just do highlights instead"); full-text background fill (rejected: too heavy for a list view); margin-on-a-blob box behind text (rejected: would interfere with masonry grid heights).
+
+**User response:** approved with comment: "the underline of the titles are a bit off right now. some look like underline some look like highlights. actually just do highlights instead."
+
+### h. Source Sans 3 added to typography (cross-references decisions.md A-entry)
+
+The font choice itself is in [`decisions.md`](decisions.md) (typography is A-category, mission-aligned). This line is the B-side cross-reference: import via Google Fonts URL alongside the existing Fraunces + Source Serif Pro line; expose as `--font-body-sans: 'Source Sans 3', system-ui, sans-serif;`; apply via class-scoped overrides on `.card .why`, `.card .overlay p / ul`, `.reader p`. Tag pills and "Purpose" / "Key points" headers stay on the existing serif stack.
+
+### i. In-text highlighting feature (cross-references decisions.md A-entry)
+
+The feature scope + in-memory v1 storage is in [`decisions.md`](decisions.md) (B→A escalation). The engineering shape: extend `web/fakes.py` with `highlights: dict[int, list[{quote, note_index}]]`; on render, walk reader paragraphs and substring-match-replace stored quotes with `<mark class="user-highlight">`; client-side, add `.reader` mouseup listener → floating "+ Note" button → opens note panel pre-filled with quote field. After save, client-side wrap the selection in `<mark>` immediately (don't wait for reload).
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 browser-check feedback turn); decisions.md → 5 A-entries dated 2026-05-21 from the same turn.
+
+---
+
+## 2026-05-21 — Avatar restructure: shaded circle as head + matching shaded body below (supersedes round-1 silhouette-inside-the-circle)
+
+**My choice:** The radial-gradient warm sphere that was acting as the *background* of the avatar (with a dark-brown head+bust silhouette painted *inside* it) is now reframed as the avatar's **head**. A second shaded shape — same warm radial gradient, dome-with-flat-bottom outline — sits below the head with a small (~6–8px) gap as the **body / bust**. The dark-brown silhouette layer added earlier today is removed entirely (`avatar_silhouette` macro deleted from `_icons.html`; `.avatar-silhouette` CSS dropped). Both head + body share the same `pulse-glow` animation so they breathe in sync.
+
+**Alternatives considered:** Keep the silhouette-inside-the-circle approach but make the silhouette more visible (rejected: user explicitly framed the shaded circle as a *head* not a background, so the silhouette was the wrong abstraction — the shaded shape *is* the figure); use an SVG `<defs>` with a radial gradient and fill the bust path with it (rejected: more LOC and indirection than just adding a sibling div with CSS gradient + matching border-radius dome — matches the head's existing pure-CSS approach).
+
+**User response:** approved with comment: "could you keep the circle there as the head of the avatar, then draw the body (same shape as the avatar body you have right now), just make it follow the same style as the shaded circle and place it below it with a gap? then you can remove the avatar icon you have right now because the shaded circle and now the shaded body will be the avatar itself."
+
+**Refs:** engineering-decisions.md → *2026-05-21 UI iteration round 1 cluster › e. Avatar SVG fix* (superseded); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 second browser-check turn).
+
+---
+
+## 2026-05-21 — Collapsed-sidebar top row: hide gear + avatar-icon + top chevron; move expand-handle to top
+
+**My choice:** When the sidebar is collapsed, only the orange `+` (add source) button stays visible at the top — the **Settings gear**, the **profile / avatar icon**, and the **top chevron-toggle** all `display: none`. The side-tab expand-handle (`.sidebar-expand-handle`) moves from vertical centre (`top: 50%; translateY(-50%)`) to near the top (`top: 0.9rem`, no translate) so it sits at the same vertical line where the top chevron used to be — the handle visually replaces the chevron's role when collapsed.
+
+**Alternatives considered:** Shrink the icons to fit inside the 56px collapsed sidebar (rejected: even at 18px each, four buttons + gaps + the chevron don't fit cleanly in 56px without crowding); keep the side-tab at vertical centre (rejected: user explicitly wants it at the top — also makes UX-sense because the user's eye is already at the top-row icons, expander affordance should be there too); keep gear / profile visible at the top of the collapsed sidebar with a vertical icon stack (rejected: 56px width is too narrow for stacked icons with reasonable hit-targets).
+
+**User response:** approved with comment: "the settings and the avatar ends up leaking out of the sidebar. they don't have to be visible when the sidebar is collapsed, only when it is extended. the > arrow is also leaking out. if you see the > tab closer to the bottom of the screenshot, i want that to be shifted up to where the top > button is."
+
+**Refs:** engineering-decisions.md → *2026-05-21 UI iteration round 1 cluster › d. Collapsed-sidebar expand handle* (refines the position rule); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 collapsed-sidebar polish turn).
+
+---
+
+## 2026-05-21 — Card title highlight: full-coverage paint (supersedes "raise gradient stop to 40%")
+
+**My choice:** Drop the partial-coverage linear-gradient entirely (`transparent N%, accent N%`) and paint the title's full line-box height with a single solid accent fill. Implementation: `background-image: linear-gradient(accent, accent)` (functionally same as `background-color`, kept as gradient syntax for consistency with the per-palette override pattern). `box-decoration-break: clone` already in place so the highlight re-paints cleanly across wrapped lines.
+
+**Alternatives considered:** Raise the gradient stop further (e.g. to 5–10%, leaving only a sliver of unpainted text on top) — rejected: still keeps the "asymmetric band" feel that the user identified as the underlying problem; **soft watercolor edges** via multi-stop gradient with fade-in/out top + bottom (deferred: would require RGB-broken-out palette vars; not worth the refactor unless user asks for softer edges).
+
+**User response:** approved with comment: "see that the highlight of the title of each content block is not really aligned? i realised it's aligned to the bottom of the text because originally it was meant to be an underline. change that and make it behave like an actual highlight."
+
+**Refs:** engineering-decisions.md → *2026-05-21 UI iteration round 1 cluster › g. Card title style* (superseded — the bottom-anchored band approach was the root cause; full-coverage paint replaces it); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 third browser-check turn).
+
+---
+
+## 2026-05-21 — Card title highlight: per-line bands with transparent top + bottom margins (supersedes "full-coverage paint")
+
+**My choice:** Title background uses a gradient with **transparent top + bottom margins** so each wrapped line's highlight is visibly distinct from the next: `linear-gradient(transparent 12%, accent 12%, accent 88%, transparent 88%)`. Combined with the existing `display: inline` + `box-decoration-break: clone`, each line-fragment renders its own band sized to that line's actual text width (line 1 wide, line 2 narrow → L-shape, not merged rectangle). Highlight covers the middle ~76% of line-height, comfortably covering x-height + most of cap-height while leaving ~3px transparent on each side of the line-box.
+
+**Alternatives considered:** Increase title `line-height` to add vertical gap between full-coverage highlights (rejected: would visibly loosen the title block — at 1.15rem + 1.3 line-height the title already feels right, the issue is *the highlight touching*, not the typography); use `background-color` instead of `linear-gradient` for the painted region (rejected: kept gradient syntax for the per-palette override pattern consistency, and gradients give us the transparent-margin lever without touching typography).
+
+**User response:** approved with comment: "i don't like how block it is now. it's a square. if the text has 2 lines, i want there to be a highlight for each line, and wrapped around the text. as of now, if the first line is longer and the second is shorter, the box just highlights the width of the context block and the height is just how many lines."
+
+**Refs:** engineering-decisions.md → *2026-05-21 — Card title highlight: full-coverage paint* (superseded — full-coverage caused adjacent-line highlights to touch and merge visually); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 fourth browser-check turn).
+
+---
+
+## 2026-05-21 — Source-edit modal (cluster of B-decisions)
+
+Engineering-side choices supporting the new source-edit feature. The A-side ("sources are editable from the UI") lives in [decisions.md](decisions.md). This cluster covers the implementation shape.
+
+### a. New `web/writes.py` module (instead of extending `repo.py`)
+
+**My choice:** Real persistent writes from the web layer go in a new `web/writes.py` module. `repo.py` keeps its read-only docstring intact. `fakes.py` keeps its in-memory-fake docstring intact. Three modules now own three different write postures: `repo` (reads), `fakes` (in-memory fakes — notes/favourites/highlights), `writes` (real DB writes from UI — source edits today; future archive/delete/etc).
+
+**Alternatives considered:** Extend `repo.py` with a writes section + update its docstring (rejected: muddies the read-only invariant — easier to keep the file pure and add a sibling module); put source writes in `fakes.py` (rejected: not a fake, persists to real schema); skip the module and inline the SQL in the route handler (rejected: route handlers should stay thin and the SQL belongs near the connection-management code).
+
+**User response:** silent approval (chose persist over stub via AskUserQuestion).
+
+### b. Source-edit modal pattern: backdrop blur, centered card, HTMX-driven open + close-on-multiple
+
+**My choice:** Modal opens via HTMX GET `/sources/{id}/edit` → renders `partials/source_modal.html` into a `<div id="modal-slot">` placed once in [base.html](../src/aifeeder/templates/base.html) (available globally). Backdrop is fixed-inset full-viewport with `backdrop-filter: blur(6px)` + semi-transparent overlay. Sidebar's `z-index: 250` keeps it above the backdrop's `z-index: 200` so it stays sharp + interactive per the user's brief; modal card has `z-index: 300`. Close on: Cancel button, Esc key, click on backdrop (outside the modal card) — all clear `#modal-slot`. Save: POST `/sources/{id}` → returns `204 + HX-Refresh: true` so the page reloads with the updated source name/url/why everywhere (sidebar, future references). Same `HX-Refresh: true` pattern as the quote-attached note save from earlier today — consistent in-house convention.
+
+**Alternatives considered:** Modal positioned inside the main column (offset right by sidebar width) instead of viewport-centered (rejected: complicates collapsed-sidebar case where offset would be wrong; viewport-centered is simpler and visually fine because the sidebar is left-flush); HTMX swap the sidebar source-row in place instead of full reload (rejected: re-rendering just the sidebar is fragile because the row's monogram, the active-state, and the future per-source counts would all need targeted swaps — full reload is cheaper and idempotent); modal mounted per-page instead of in `base.html` (rejected: every page would need to repeat the slot div).
+
+**User response:** approved with comment: "when user click a source on the sidebar, a block will appear on the center of the page blurring everything around it except the sidebar."
+
+### c. Why-textarea copy: helper hint *above* the field, not a placeholder
+
+**My choice:** Single textarea with a small italic helper line *above* the field: "What do you value from this source? What would you rather not receive?" — stays visible even after the user starts typing. Field placeholder stays empty so the user sees an unmarked writing surface as they think.
+
+**Alternatives considered:** Two-question placeholder inside the textarea (rejected: disappears the moment user types — they lose the cognitive scaffold mid-sentence); two separate textareas joined into one `why` string on save (rejected: more friction, and the `sources.why` column is a single TEXT field — splitting + joining is a code smell when the storage is unsplit).
+
+**User response:** approved via AskUserQuestion (option C from a 3-option set).
+
+### d. Sidebar source-row becomes HTMX-trigger (not `<a href="#">` placeholder)
+
+**My choice:** Source-row tag stays `<a>` for keyboard-tab semantics but drops `href="#"` (the dead anchor) and uses `hx-get="/sources/{id}/edit" hx-target="#modal-slot" hx-swap="innerHTML"`. Adds `style="cursor: pointer;"` to keep the click affordance now that `href` is gone (an alternative was `role="button" tabindex="0"` — kept simpler; HTMX handles the click + keyboard activation reasonably).
+
+**Alternatives considered:** Use `<button>` instead of `<a>` (rejected: would lose the visual treatment from `.source-row` styling that's tuned for anchor display + would need to reset button defaults).
+
+**User response:** silent approval (implicit in the source-click-to-edit ask).
+
+### e. Repo gets a small `get_source(id)` lookup for the edit endpoint
+
+**My choice:** Added a tiny `get_source(id) -> dict | None` query to `repo.py` (parallel to the existing `get_item`). The modal needs to render with the current url + why pre-populated; the existing `list_sources()` returns all sources so could be filtered in-route, but a direct id lookup is cleaner.
+
+**Alternatives considered:** Filter the result of `list_sources()` in the route (rejected: O(n) for no reason, and inconsistent with the existing `get_item` pattern).
+
+**User response:** silent approval (implementation detail).
+
+### f. Graceful duplicate-URL handling: re-render modal with `.modal-error` (not 500)
+
+**My choice:** `sources.url` carries a `UNIQUE` constraint (per the original schema). When the user edits a source's URL to one already held by another source, the `UPDATE` raises `sqlite3.IntegrityError`. Wrap `writes.update_source` in `try/except IntegrityError`; on the error path, return a 200 re-rendering `partials/source_modal.html` with the user's typed values preserved (so they don't have to re-type) + an `error` variable set to "That URL is already used by another source. Pick a different one." The modal partial conditionally renders `<div class="modal-error">...</div>` above the form, styled with a soft red palette tone (`#FBE7E2` / `#E5A99B` / `#6B2A1E`) so it reads as a gentle correction rather than a system error.
+
+**Alternatives considered:** Return 400 + raw error message (rejected: HTMX's default behaviour doesn't swap on non-2xx, would need `HX-Reswap` header — more moving parts for the same UX); validate URL uniqueness client-side via a HEAD probe (rejected: race condition between probe and submit + adds JS for a corner case); change the schema to allow duplicate URLs (rejected: URL uniqueness is correct — two different sources shouldn't both point at the same RSS feed, that's a data-quality issue worth catching).
+
+**Discovered during smoke-testing.** During end-to-end testing the route returned 500 on the duplicate-URL path. Surfaced this as a real UX failure (also discovered that a prior test pollution created a duplicate Simon Willison row at id=89, cleaned up: `DELETE FROM sources WHERE id = 89; UPDATE sources SET url = '...atom/everything/' WHERE id = 1`). The integrity-error handling is the durable fix; the cleanup was a one-time local-DB hygiene step.
+
+**User response:** silent approval (defensive engineering, no user friction).
+
+**Refs:** decisions.md → *2026-05-21 — Sources are user-editable from the UI* (the A side of this feature); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 source-edit modal turn).
+
+---
+
+_Last updated: 2026-05-21 — Source-edit modal cluster (6 B-decisions supporting the A-decision in decisions.md: new `writes.py` module, modal pattern + HX-Refresh save, helper-hint copy choice, sidebar source-row HTMX wiring, `get_source` repo lookup, graceful duplicate-URL handling via `.modal-error` re-render)._

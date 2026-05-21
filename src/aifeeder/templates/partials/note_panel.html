@@ -10,6 +10,9 @@
         {% for n in notes %}
         <div class="note-existing">
             <div class="note-meta">{{ n.title }} · {{ n.created_at[:16].replace('T', ' ') }}</div>
+            {% if n.quote %}
+            <div class="note-quote">"{{ n.quote }}"</div>
+            {% endif %}
             <div>{{ n.body }}</div>
         </div>
         {% endfor %}
@@ -19,6 +22,13 @@
     {% endif %}
 
     <form hx-post="/notes/{{ item_id }}" hx-target=".note-panel" hx-swap="outerHTML">
+        {% if quote %}
+        <div class="quote-pending">
+            <span class="label">quoted from the article</span>
+            "{{ quote }}"
+        </div>
+        {% endif %}
+        <input type="hidden" name="quote" value="{{ quote }}">
         <input type="text" name="title" placeholder="Title (optional)" maxlength="120">
         <textarea name="body" placeholder="A note for future-you about this piece…" required></textarea>
         <div class="form-actions">

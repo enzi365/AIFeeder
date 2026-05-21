@@ -1,3 +1,4 @@
+{% import "_icons.html" as ico %}
 <a class="card shape-{{ item.shape }} palette-{{ item.palette }}" href="/content/{{ item.id }}">
     <span class="accent-stripe" aria-hidden="true"></span>
 
@@ -10,6 +11,12 @@
         <span class="dot">·</span>
         <span class="cat">{{ item.content_type_tag or "" }}</span>
     </div>
+
+    {% if item.relevance_verdict == 'yes' %}
+        {{ ico.apple_whole() }}
+    {% elif item.relevance_verdict == 'maybe' %}
+        {{ ico.apple_eaten(item.id) }}
+    {% endif %}
 
     <div class="overlay" aria-hidden="true">
         {% if item.purpose %}

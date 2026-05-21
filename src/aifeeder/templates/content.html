@@ -18,22 +18,42 @@
                 {% if item.url %} · <a href="{{ item.url }}" target="_blank" rel="noopener">open original ↗</a>{% endif %}
             </p>
 
-            <aside class="sticky-note">
-                <span class="label">why this is worth your time</span>
-                <p>{{ item.relevance_reason }}</p>
-                {% if item.purpose %}<p style="margin-top: 0.6rem; font-size: 0.92rem; color: var(--ink-soft);">{{ item.purpose }}</p>{% endif %}
+            {% if item.purpose or item.key_points %}
+            <aside class="content-callout">
+                {% if item.purpose %}
+                <section>
+                    <h4>Purpose</h4>
+                    <p>{{ item.purpose }}</p>
+                </section>
+                {% endif %}
+                {% if item.key_points %}
+                <section>
+                    <h4>Key points</h4>
+                    <ul>
+                        {% for kp in item.key_points %}
+                        <li>{{ kp }}</li>
+                        {% endfor %}
+                    </ul>
+                </section>
+                {% endif %}
             </aside>
+            {% endif %}
 
-            <div class="reader">
-                {% if item.raw_content %}
-                    {% for para in item.raw_content.split('\n\n') %}
-                        {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+            <div class="reader" data-item-id="{{ item.id }}">
+                {% if item.rendered_paragraphs %}
+                    {% for para in item.rendered_paragraphs %}
+                    <p>{{ para | safe }}</p>
                     {% endfor %}
                 {% else %}
                     <p class="no-content">No content body available. <a href="{{ item.url }}" target="_blank" rel="noopener">Open original ↗</a></p>
                 {% endif %}
             </div>
         </article>
+
+        {# Floating selection popup — JS positions it near the current text selection #}
+        <div id="selection-popup" data-item-id="{{ item.id }}">
+            <button type="button">+ Note from selection</button>
+        </div>
 
         {# Action stack (fixed bottom-right) #}
         <div class="actions">
@@ -43,14 +63,14 @@
                         hx-target="#feedback-callout"
                         hx-swap="innerHTML"
                         title="Worth my time">
-                    {{ ico.up_arrow() }}
+                    {{ ico.thumbs_up() }}
                 </button>
                 <button class="action-btn" type="button"
                         hx-post="/feedback/{{ item.id }}/down"
                         hx-target="#feedback-callout"
                         hx-swap="innerHTML"
                         title="Didn't fit">
-                    {{ ico.down_arrow() }}
+                    {{ ico.thumbs_down() }}
                 </button>
             </div>
 

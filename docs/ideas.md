@@ -275,4 +275,38 @@ Visual + interaction ideas deferred from the v1 design pass. Same shape as the e
 
 ---
 
-_Last updated: 2026-05-21 — UI/UX section grew: added [Card snapshot] and [Read-state indicator] deferrals from the /plan-feature pass._
+## [UI/UX] Avatar click → dedicated persona page
+
+**Idea:** Clicking the persona avatar in the sidebar takes the user to a dedicated `/persona` (or similar) page. The avatar sits at the centre of the page, surrounded by larger thought-bubble circles describing the user's consumption persona — drawn from per-source "why" statements + recent feedback patterns + (later) insights / reflections.
+
+**Intention / purpose:** The sidebar avatar has the constraint of being small — three hover-bubbles is roughly the upper limit before they overlap the avatar (which is the gotcha the first browser-check surfaced). A dedicated page gives the persona room to breathe and lets the user actually *engage* with their reading self — see what shape it has, recognize patterns, course-correct the "why" statements. The sidebar avatar stays as the entry point + ambient reminder.
+
+**Halfway considerations:**
+- Pairs naturally with [Periodic "why" revisits](#periodic-why-revisits--insight-shift-trigger) — the persona page is the surface where revisit prompts feel most at home.
+- Same anti-engagement-bait posture as the rest of the app: no "persona score", no "completion %", no daily-streaks. Just a portrait of who-you're-reading-like.
+- Could compose with [Insights / reflections section](#insights--reflections-section) — reflections feed the persona description.
+- Implementation order: this is a v1.5 / v2 surface, not v1. The sidebar avatar shipping with hover-bubbles is enough to validate the "ambient persona reminder" pattern before we commit to a dedicated surface.
+- Visual: bigger version of the sidebar avatar + concentric / orbital circles around it (a more expressive version of the sidebar's mix-blend-mode bubbles).
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 browser-check feedback turn — sidebar avatar discussion); decisions.md → *2026-05-21 — Sidebar default state* (current sidebar plays the *ambient* role; persona page would play the *deliberate-visit* role).
+
+---
+
+## [UI/UX] Card shape + colour rationale visibility / user customization
+
+**Idea:** Two parts. (a) **Surface the logic** somewhere reachable — e.g. settings page, or a tooltip on long-press — explaining how each card's shape (1×1 / 2×1 / 1×2) and palette (warm / cool / neutral) is chosen from the content_type_tag. (b) **Eventual user customization** — let the user remap content_type_tag → shape / palette to their own taste, or override per-source.
+
+**Intention / purpose:** Right now the mapping is opaque (interview → video-shape; essay/research-paper → text-shape; everything-else → square; warm = essay/interview/review, cool = tutorial/research/thread, neutral = news/link-blog/other). The user noticed and asked "how are these chosen?" — that's signal the mapping should either be discoverable or customizable, not just hard-coded in [routes.py](../src/aifeeder/web/routes.py) at `_TAG_TO_PALETTE` and `_shape_for`.
+
+**Halfway considerations:**
+- Customization is feature creep risk — most mindful-consumption users want the app to make taste calls, not become a personalization studio.
+- Discoverability (option a) is cheap and probably enough — a one-line description on a settings page covers it.
+- If customization is added, the obvious entry point is the source-edit screen (per-source overrides) rather than a global tag-mapper.
+- The shape-by-content-type assumption may not survive contact with real data — research-paper cards being tall-narrow may not actually match how the user wants to scan papers. Revisit after a few weeks of real use.
+- **Right trigger:** when the user says "I want X tag to look different" or "I can't find Y type of content quickly" — not before.
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-21 browser-check feedback turn — "park this somewhere with all the other ideas").
+
+---
+
+_Last updated: 2026-05-21 — UI/UX section grew again: added [Avatar click → persona page] and [Card shape/colour rationale] deferrals from the first browser-check feedback round._

@@ -1,15 +1,17 @@
 """Page + HTMX endpoints. Imported for its side effects (route registration).
 
 Page routes return full HTML via Jinja2; HTMX endpoints return partials.
-Notes + favourites use in-memory fakes; feedback callouts are stateless echoes
-for v1 (real schema lands with `refresh`).
+Notes + favourites + highlights use in-memory fakes; feedback callouts are
+stateless echoes for v1 (real schema lands with `refresh`).
 """
+import html
 import json
+import sqlite3
 
 from fastapi import HTTPException, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, Response
 
-from . import fakes, repo
+from . import fakes, repo, writes
 from .app import app, templates
 
 
@@ -55,6 +57,29 @@ def _monogram(name: str) -> str:
     return (name or "?")[0].upper()
 
 
+def _render_paragraphs_with_highlights(raw_content: str, highlights: list[str]) -> list[str]:
+    """Split raw_content on blank lines, html-escape each paragraph, then wrap
+    any stored highlight quote in <mark class="user-highlight">. First-match-only
+    per quote per paragraph — naïve but fine for v1 (offset-tracking lands with
+    real persistence)."""
+    if not raw_content:
+        return []
+    paragraphs = [p.strip() for p in raw_content.split("\n\n") if p.strip()]
+    rendered: list[str] = []
+    for p in paragraphs:
+        escaped = html.escape(p)
+        for h in highlights:
+            if not h:
+                continue
+            escaped_h = html.escape(h.strip())
+            if not escaped_h:
+                continue
+            mark = f'<mark class="user-highlight">{escaped_h}</mark>'
+            escaped = escaped.replace(escaped_h, mark, 1)
+        rendered.append(escaped)
+    return rendered
+
+
 # ---------- pages ----------
 
 @app.get("/", response_class=HTMLResponse)
@@ -93,6 +118,10 @@ async def content(request: Request, item_id: int):
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
     item = _enrich_item(item)
+    highlights = fakes.get_highlights(item_id)
+    item["rendered_paragraphs"] = _render_paragraphs_with_highlights(
+        item.get("raw_content") or "", highlights
+    )
     user = repo.get_user()
     sources = repo.list_sources()
     for s in sources:
@@ -215,7 +244,7 @@ async def feedback_callout(request: Request, item_id: int, direction: str):
 
 
 @app.get("/notes/{item_id}/panel", response_class=HTMLResponse)
-async def note_panel(request: Request, item_id: int):
+async def note_panel(request: Request, item_id: int, quote: str = ""):
     item = repo.get_item(item_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -225,6 +254,7 @@ async def note_panel(request: Request, item_id: int):
         {
             "item_id": item_id,
             "notes": fakes.get_notes(item_id),
+            "quote": quote.strip(),
         },
     )
 
@@ -235,14 +265,25 @@ async def save_note(
     item_id: int,
     title: str = Form(""),
     body: str = Form(""),
+    quote: str = Form(""),
 ):
-    fakes.add_note(item_id, title=title or "Untitled", body=body)
+    quote_clean = quote.strip()
+    fakes.add_note(
+        item_id,
+        title=title or "Untitled",
+        body=body,
+        quote=quote_clean or None,
+    )
+    if quote_clean:
+        # Reload so the new highlight renders in the reader.
+        return Response(status_code=204, headers={"HX-Refresh": "true"})
     return templates.TemplateResponse(
         request,
         "partials/note_panel.html",
         {
             "item_id": item_id,
             "notes": fakes.get_notes(item_id),
+            "quote": "",
         },
     )
 
@@ -255,3 +296,43 @@ async def favourite_toggle(request: Request, item_id: int):
         "partials/star_button.html",
         {"item_id": item_id, "is_favourite": state},
     )
+
+
+# ---------- source edit (real DB write) ----------
+
+@app.get("/sources/{source_id}/edit", response_class=HTMLResponse)
+async def source_edit_modal(request: Request, source_id: int):
+    source = repo.get_source(source_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Source not found")
+    return templates.TemplateResponse(
+        request,
+        "partials/source_modal.html",
+        {"source": source},
+    )
+
+
+@app.post("/sources/{source_id}", response_class=HTMLResponse)
+async def source_save(
+    request: Request,
+    source_id: int,
+    url: str = Form(""),
+    why: str = Form(""),
+):
+    source = repo.get_source(source_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Source not found")
+    try:
+        writes.update_source(source_id, url=url, why=why)
+    except sqlite3.IntegrityError:
+        # sources.url is UNIQUE — re-render the modal with the user's edits + an error.
+        return templates.TemplateResponse(
+            request,
+            "partials/source_modal.html",
+            {
+                "source": {**source, "url": url, "why": why},
+                "error": "That URL is already used by another source. Pick a different one.",
+            },
+        )
+    # Page reload so the updated url + why surface everywhere (sidebar hover-title, etc.)
+    return Response(status_code=204, headers={"HX-Refresh": "true"})

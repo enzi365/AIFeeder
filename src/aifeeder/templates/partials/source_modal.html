@@ -1,0 +1,37 @@
+{% import "_icons.html" as ico %}
+<div class="modal-backdrop" data-modal-backdrop>
+    <div class="modal-card" role="dialog" aria-label="Edit source" aria-modal="true">
+        <button class="modal-close" type="button" data-modal-close title="Close">
+            {{ ico.close_x() }}
+        </button>
+        <h2 class="modal-title">{{ source.name }}</h2>
+
+        {% if error %}
+        <div class="modal-error" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form hx-post="/sources/{{ source.id }}"
+              hx-target="#modal-slot"
+              hx-swap="innerHTML"
+              class="modal-form">
+            <label class="modal-field">
+                <span class="modal-label">Link / URL</span>
+                <input type="url" name="url" value="{{ source.url or '' }}"
+                       placeholder="https://…" autocomplete="off">
+            </label>
+
+            <div class="modal-field">
+                <span class="modal-label">Why this source</span>
+                <span class="modal-hint">
+                    What do you value from this source? What would you rather not receive?
+                </span>
+                <textarea name="why" rows="5">{{ source.why or '' }}</textarea>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel-btn" data-modal-close>cancel</button>
+                <button type="submit" class="modal-save-btn">save</button>
+            </div>
+        </form>
+    </div>
+</div>

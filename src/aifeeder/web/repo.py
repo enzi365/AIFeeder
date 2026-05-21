@@ -27,6 +27,16 @@ def list_sources() -> list[dict[str, Any]]:
         return [dict(r) for r in rows]
 
 
+def get_source(source_id: int) -> dict[str, Any] | None:
+    """Single source by id — for the source-edit modal."""
+    with closing(connect()) as conn:
+        row = conn.execute(
+            "SELECT id, name, url, why FROM sources WHERE id = ?",
+            (source_id,),
+        ).fetchone()
+        return dict(row) if row else None
+
+
 def list_feed_items() -> list[dict[str, Any]]:
     """Items the AI recommended ('yes' or 'maybe'), newest first.
 

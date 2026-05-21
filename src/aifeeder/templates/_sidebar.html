@@ -13,6 +13,9 @@
     </div>
 
     <nav class="sidebar-nav">
+        <a class="nav-item {% if active_page == 'home' %}active{% endif %}" href="/home">
+            {{ ico.home() }}<span class="label">Home</span>
+        </a>
         <a class="nav-item {% if active_page == 'library' %}active{% endif %}" href="/library">
             {{ ico.books() }}<span class="label">Library</span>
         </a>
@@ -27,7 +30,14 @@
     <h3>Sources</h3>
     <div class="source-list">
         {% for s in sources %}
-        <a class="source-row" href="#" title="{{ s.why }}">
+        <a class="source-row"
+           hx-get="/sources/{{ s.id }}/edit"
+           hx-target="#modal-slot"
+           hx-swap="innerHTML"
+           role="button"
+           tabindex="0"
+           style="cursor: pointer;"
+           title="{{ s.why }}">
             <span class="monogram">{{ s.monogram }}</span>
             <span class="source-name">{{ s.name }}</span>
         </a>
@@ -44,6 +54,11 @@
             <div class="bubble b2">practitioner-led</div>
             <div class="bubble b3">no fluff</div>
         </div>
-        <div class="avatar"></div>
+        <div class="avatar avatar-head"></div>
+        <div class="avatar-body"></div>
     </div>
+
+    <button class="sidebar-expand-handle" type="button" data-sidebar-toggle title="Expand sidebar">
+        {{ ico.chevron_left() }}
+    </button>
 </aside>
