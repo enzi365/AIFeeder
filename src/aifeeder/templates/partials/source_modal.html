@@ -39,6 +39,16 @@
             </div>
 
             <div class="modal-actions">
+                {% if not is_add %}
+                <button type="button" class="modal-delete-btn"
+                        hx-delete="/sources/{{ source.id }}"
+                        hx-confirm="Delete '{{ source.name }}' and all its items? This cannot be undone."
+                        hx-target="#modal-slot"
+                        hx-swap="innerHTML"
+                        title="Delete this source">
+                    {{ ico.trash() }}<span>delete source</span>
+                </button>
+                {% endif %}
                 <button type="button" class="modal-cancel-btn" data-modal-close>cancel</button>
                 <button type="submit" class="modal-save-btn">{{ 'add' if is_add else 'save' }}</button>
             </div>

@@ -8,10 +8,13 @@ import html
 import json
 import re
 import sqlite3
+from contextlib import closing
 
 from fastapi import HTTPException, Request, Form
 from fastapi.responses import HTMLResponse, Response
 
+from ..db import connect
+from ..refresh import process_source
 from . import fakes, repo, writes
 from .app import app, templates
 
@@ -44,6 +47,19 @@ def _shape_for(tag: str | None) -> str:
     return "square"
 
 
+# Maps the structural source_type → a coarse "format" label used to pick a
+# media-type icon on the home card. source_type is set at ingest time and
+# can't drift like content_type_tag (which is AI-derived).
+_SOURCE_TYPE_TO_FORMAT: dict[str, str] = {
+    "youtube_channel": "video",
+    "rss": "reading",
+}
+
+
+def _format_for(source_type: str | None) -> str:
+    return _SOURCE_TYPE_TO_FORMAT.get(source_type or "", "reading")
+
+
 # Splits a "maybe" reason on the first hinge word ("although"/"but"/"though"),
 # preserving the hinge token in the caution half so the locked voice survives.
 # "yes" reasons have no hinge → caution stays None.
@@ -62,9 +78,12 @@ def _split_reason(text: str | None) -> tuple[str | None, str | None]:
 
 
 def _enrich_item(item: dict) -> dict:
-    """Add view-only fields: palette family, card shape, parsed key_points, fav flag."""
+    """Add view-only fields: palette family, card shape, parsed key_points, fav flag,
+    format icon dispatch, and (for YT items) the bare video_id used by the iframe."""
     item["palette"] = _palette_for(item.get("content_type_tag"))
     item["shape"] = _shape_for(item.get("content_type_tag"))
+    item["format"] = _format_for(item.get("source_type"))
+    item["video_id"] = item.get("external_id") if item.get("source_type") == "youtube_channel" else None
     raw_kp = item.get("key_points_json")
     item["key_points"] = json.loads(raw_kp) if raw_kp else []
     item["is_favourite"] = fakes.is_favourite(item["id"])
@@ -348,7 +367,7 @@ async def source_create(
             },
         )
     try:
-        writes.insert_source(name_clean, url_clean, why_clean)
+        new_id = writes.insert_source(name_clean, url_clean, why_clean)
     except sqlite3.IntegrityError:
         return templates.TemplateResponse(
             request,
@@ -358,7 +377,40 @@ async def source_create(
                 "error": "That URL is already used by another source. Pick a different one.",
             },
         )
-    return Response(status_code=204, headers={"HX-Refresh": "true"})
+    # Hand off to the ingest panel rather than reloading immediately — the user
+    # picks how many items to fetch + summarize for this new source. Closing
+    # the panel triggers the reload (via data-modal-needs-reload on the backdrop).
+    source = repo.get_source(new_id)
+    return templates.TemplateResponse(
+        request,
+        "partials/ingest_panel.html",
+        {"source": source},
+    )
+
+
+# ---------- source ingest (real DB write + AI calls) ----------
+# Sync `def` so FastAPI runs it in a thread pool — `process_source` is blocking
+# (yt-dlp fetches + OpenAI calls can take 30–60s for a 10-item YouTube batch),
+# and we don't want to block the event loop.
+
+@app.post("/sources/{source_id}/ingest", response_class=HTMLResponse)
+def source_ingest(request: Request, source_id: int, count: int = Form(10)):
+    source = repo.get_source(source_id)
+    if source is None:
+        raise HTTPException(status_code=404, detail="Source not found")
+    count = max(1, min(count, 100))  # mirror the input's min/max; never trust the client
+    with closing(connect()) as conn:
+        result = process_source(
+            conn, source,
+            per_source=count,
+            verbose=False,
+            dry_run=False,
+        )
+    return templates.TemplateResponse(
+        request,
+        "partials/ingest_done.html",
+        {"source": source, "result": result},
+    )
 
 
 # ---------- source edit (real DB write) ----------
@@ -373,6 +425,15 @@ async def source_edit_modal(request: Request, source_id: int):
         "partials/source_modal.html",
         {"source": source},
     )
+
+
+@app.delete("/sources/{source_id}", response_class=HTMLResponse)
+async def source_delete(request: Request, source_id: int):
+    """Hard-delete a source + all its items/summaries/cost_log/feedback rows.
+    UI guards with `hx-confirm` before the request even fires."""
+    if writes.delete_source(source_id):
+        return Response(status_code=204, headers={"HX-Refresh": "true"})
+    raise HTTPException(status_code=404, detail="Source not found")
 
 
 @app.post("/sources/{source_id}", response_class=HTMLResponse)

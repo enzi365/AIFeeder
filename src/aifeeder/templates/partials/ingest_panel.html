@@ -1,0 +1,42 @@
+{% import "_icons.html" as ico %}
+<div class="modal-backdrop" data-modal-backdrop data-modal-needs-reload>
+    <div class="modal-card" role="dialog" aria-label="Ingest items for new source" aria-modal="true">
+        <button class="modal-close" type="button" data-modal-close title="Close">
+            {{ ico.close_x() }}
+        </button>
+        <h2 class="modal-title">{{ source.name }} — added</h2>
+
+        <p class="modal-hint" style="margin-bottom: 0.75rem;">
+            How many items do you want to ingest now? Fetch + AI-summarize runs immediately.
+            {% if source.source_type == 'youtube_channel' %}
+            YouTube transcripts cost ~$0.0015 each; this can take 30–60s for 10 videos.
+            {% else %}
+            RSS items cost ~$0.0001 each.
+            {% endif %}
+        </p>
+
+        <form hx-post="/sources/{{ source.id }}/ingest"
+              hx-target="#modal-slot"
+              hx-swap="innerHTML"
+              hx-disabled-elt="find button"
+              class="modal-form">
+            <label class="modal-field">
+                <span class="modal-label">Items to ingest</span>
+                <input type="number" name="count" value="10" min="1" max="100"
+                       autocomplete="off" required style="max-width: 8rem;">
+            </label>
+
+            <div class="ingest-spinner htmx-indicator" aria-live="polite">
+                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                <span class="ingest-spinner-label">Fetching + summarizing…</span>
+            </div>
+
+            <div class="modal-actions">
+                <button type="button" class="modal-cancel-btn" data-modal-close>
+                    skip — wait for next refresh
+                </button>
+                <button type="submit" class="modal-save-btn">ingest</button>
+            </div>
+        </form>
+    </div>
+</div>

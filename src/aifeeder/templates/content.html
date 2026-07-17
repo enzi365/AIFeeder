@@ -39,6 +39,17 @@
             </aside>
             {% endif %}
 
+            {% if item.video_id %}
+            <div class="video-embed">
+                <iframe src="https://www.youtube-nocookie.com/embed/{{ item.video_id }}"
+                        title="{{ item.title|e }}"
+                        allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                        referrerpolicy="strict-origin-when-cross-origin"
+                        allowfullscreen
+                        loading="lazy"></iframe>
+            </div>
+            {% endif %}
+
             <div class="reader" data-item-id="{{ item.id }}">
                 {% if item.rendered_paragraphs %}
                     {% for para in item.rendered_paragraphs %}

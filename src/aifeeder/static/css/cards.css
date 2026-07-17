@@ -1,12 +1,15 @@
-/* Home-page masonry + cards.
- * 3-col grid, dense flow. video=2col, text=2row, square=1x1.
- * Hover overlay reveals purpose + key_points (no grid reflow).
+/* Home-page grid + cards.
+ * 3-col grid, dense flow. video=2col (wider, for video items).
+ * Row heights now auto-sized — rows shrink to the tallest card in that row,
+ * so a row of short cards stays short. Each card has a min-height floor so
+ * very-thin items don't look squished. Hover overlay reveals purpose +
+ * key_points (no grid reflow).
  */
 
 .feed-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    grid-auto-rows: 220px;
+    grid-auto-rows: auto;
     grid-auto-flow: dense;
     gap: 1.5rem;
 }
@@ -24,6 +27,7 @@
     border: 1px solid var(--rule);
     border-radius: 6px;
     padding: 1.25rem 1.4rem;
+    min-height: 180px;        /* floor so very-short cards don't look squished */
     overflow: hidden;
     box-shadow: var(--shadow-soft);
     transition: transform var(--t-med) var(--ease), box-shadow var(--t-med) var(--ease);
@@ -37,8 +41,7 @@
     box-shadow: var(--shadow-lift);
     text-decoration: none;
 }
-.card.shape-video { grid-column: span 2; }
-.card.shape-text  { grid-row: span 2; }
+.card.shape-video { grid-column: span 2; }   /* wider, for video/interview items */
 
 .card .accent-stripe {
     position: absolute;
@@ -166,3 +169,20 @@
     transition: transform var(--t-fast) var(--ease);
 }
 .card:hover .apple { transform: scale(1.08) rotate(-3deg); }
+
+/* ---------- format-type indicator (sits left of the apple) ---------- */
+.card .format-icon {
+    position: absolute;
+    bottom: 0.75rem;
+    right: calc(0.65rem + 30px + 0.45rem);  /* apple-width + gap */
+    width: 22px;
+    height: 22px;
+    pointer-events: none;
+    z-index: 2;
+    opacity: 0.85;
+    transition: opacity var(--t-fast) var(--ease);
+}
+.card:hover .format-icon { opacity: 1; }
+.card .format-video   { color: var(--accent-cool); }
+.card .format-audio   { color: var(--accent-warm); }
+.card .format-reading { color: var(--ink-soft); }

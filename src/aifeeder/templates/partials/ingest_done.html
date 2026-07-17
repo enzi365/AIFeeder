@@ -1,0 +1,32 @@
+{% import "_icons.html" as ico %}
+<div class="modal-backdrop" data-modal-backdrop data-modal-needs-reload>
+    <div class="modal-card" role="dialog" aria-label="Ingest complete" aria-modal="true">
+        <button class="modal-close" type="button" data-modal-close title="Close">
+            {{ ico.close_x() }}
+        </button>
+
+        {% if result.fetch_error %}
+        <h2 class="modal-title">Couldn't fetch this source</h2>
+        <p class="modal-hint">
+            {{ result.fetch_error }}
+        </p>
+        <p class="modal-hint">
+            The source was still added — you can retry from the CLI
+            (<code>aifeeder refresh --source-id {{ source.id }}</code>) or on the next scheduled refresh.
+        </p>
+        {% else %}
+        <h2 class="modal-title">Done — {{ result.processed }} new item{{ '' if result.processed == 1 else 's' }}</h2>
+        <p class="modal-hint" style="margin-bottom: 0.6rem;">
+            {{ result.new_items }} fetched ·
+            {{ result.processed }} summarized ·
+            {% if result.failed %}{{ result.failed }} failed · {% endif %}
+            {% if result.skipped %}{{ result.skipped }} skipped · {% endif %}
+            cost ${{ "%.4f" | format(result.cost_usd) }}
+        </p>
+        {% endif %}
+
+        <div class="modal-actions">
+            <button type="button" class="modal-save-btn" data-modal-close>close</button>
+        </div>
+    </div>
+</div>

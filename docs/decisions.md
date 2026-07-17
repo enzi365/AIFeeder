@@ -405,3 +405,23 @@ _Last updated: 2026-05-21 — 6 A-entries from the browser-check + UI-iteration 
 ---
 
 _Last updated: 2026-05-22 — Home card reason-split lands as A-decision (labelless sage/sienna stacked blocks; locked AI voice preserved verbatim; sage added to the palette as `--accent-positive*`)._
+
+---
+
+## 2026-05-22 — Source-add ingest flow: single-shot upfront count
+
+**Status:** Accepted
+
+**Decision:** When a user adds a new source, after the source row is created they're handed off (in the same modal slot) to an **ingest panel** that asks one question — *"How many items do you want to ingest now?"* — defaulting to 10, with bounds [1, 100]. Clicking **Ingest** runs `process_source(per_source=N)` synchronously (FastAPI thread-pooled) with a spinner; the result panel shows *"Done — N new items · cost $X.XXXX"* and a Close button. Closing any way (X / Esc / backdrop / Skip / Close) reloads the page via a `data-modal-needs-reload` marker on the modal backdrop, so the sidebar + feed reflect the new source.
+
+**Why:** User originally proposed batched-with-continue ingestion ("ingest in batches of 15, ask continue after each, no time cap") — clearly mission-aligned (user controls depth incrementally, no auto-continuation). When I surfaced the open A-questions (show running cost? button order? cost-threshold guard?), they redirected to a simpler "how many do you want to ingest" upfront-count flow and asked the original batched-continue idea be parked in [`ideas.md`](ideas.md) for future revisit. The simpler flow preserves the user-in-control intent (no surprise depth, no surprise cost) without the multi-step interaction state. Single-shot is also easier to recover from: a feed-fetch failure leaves the source row in place + a clear "Couldn't fetch" panel, no half-completed batch state.
+
+**Tradeoff:** Two costs taken on:
+- **No mid-flow extension.** User picks 10, realizes they want 30, has no in-UI way to "extend" — they'd need to re-trigger ingest (which today only happens via CLI `aifeeder refresh --source-id N`, or wait for the next scheduled refresh). If this turns out to be the dominant pain pattern, the batched-continue idea in [ideas.md](ideas.md) gets picked up.
+- **Sync blocking request.** A 10-item YouTube ingest takes 30–60s; the modal sits with a spinner the whole time. Async-with-progress (SSE, polling) would be nicer but ~3x engineering. Sync def + FastAPI thread pool keeps the route simple and the event loop unblocked.
+
+**Refs:** ideas.md → *2026-05-22 Batched-continue ingest flow with running cost display* (deferred alternative; bidirectional link); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 ingest-flow turn); state.md → *Current focus* + *What's implemented* (source-add flow updated); engineering-decisions.md → *2026-05-22 — Source-add ingest panel implementation* (sibling B-entry covering implementation specifics — process_source reuse, data-modal-needs-reload close pattern, count bounds clamp).
+
+---
+
+_Last updated: 2026-05-22 — Source-add ingest flow as A-decision (single-shot upfront count, batched-continue deferred to ideas.md)._

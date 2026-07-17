@@ -310,3 +310,24 @@ Visual + interaction ideas deferred from the v1 design pass. Same shape as the e
 ---
 
 _Last updated: 2026-05-21 — UI/UX section grew again: added [Avatar click → persona page] and [Card shape/colour rationale] deferrals from the first browser-check feedback round._
+
+---
+
+## Batched-continue ingest flow with running cost display
+
+**Idea:** When a user adds a new source, instead of asking upfront "how many items?" once, ingest in batches of N (e.g. 15) and after each batch show a *"Found 30 items so far (cost $0.045). Continue?"* prompt with `[Done] [Continue]` buttons. Cost-aware framing replaces "more = better" with "what am I spending". Buttons ordered Done-first so stopping is the path of least resistance.
+
+**Intention / purpose:** Let the user discover how far back they want to go through interaction rather than guessing upfront. The running-cost display turns a potentially infinite-scrolly UX into a mindful one — every batch is a small intentional re-commitment, not auto-continuation. Pairs with the no-engagement-metrics ethos by replacing engagement framings with consumption-cost framings.
+
+**Halfway considerations:**
+- The mindfulness paradox cuts both ways here: "Continue?" prompts could feel like "just one more" dark patterns if the visual framing is wrong (big green Continue button = bad; small "you can keep going if you want" link = good).
+- Cost-display only makes sense if the user knows what's a normal cost (a Struthless video ≈ $0.0015; an RSS item ≈ $0.0001). Showing raw dollar amounts may not surface meaningful signal without a baseline. Maybe show "items so far" + "cost" + "rate" (e.g. $0.015 / 10 items)?
+- For RSS this maxes out at the feed's available entries (10-50 typical) — the "continue" loop hits the floor quickly. Only YouTube (yt-dlp paging) supports indefinite paging. So this is mostly a YT-specific feature in practice.
+- Engineering cost vs. the simpler upfront-count approach: roughly 3x (batched fetch state, multi-step HTMX panel, progressive cost accumulator, edge cases when feed runs out mid-batch).
+- **Right trigger:** when the upfront-count approach feels too rigid — e.g. user adds a YT channel, picks 10, realizes they want 30, has no good way to "extend". If that happens repeatedly, this gets picked up.
+
+**Refs:** decisions.md → 2026-05-22 — Source-add ingest flow (single-shot upfront count, deferring this); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 ingest-flow turn).
+
+---
+
+_Last updated: 2026-05-22 — Added [Batched-continue ingest flow with running cost display] — deferred in favour of simpler upfront-count flow shipped this session._

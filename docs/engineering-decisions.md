@@ -364,3 +364,122 @@ Small choices made during implementation:
 ---
 
 _Last updated: 2026-05-22 — Source-add UI shipped. Phase 3 of the locked post-refresh order complete. Next: real-world test + phase 4 (YouTube/Struthless)._
+
+---
+
+## 2026-05-22 — Phase 4 narrow shipped (YouTube ingestion via yt-dlp + youtube-transcript-api)
+
+Narrow phase 4 from the locked post-refresh order: end-to-end YouTube channel ingestion. New [ingest.fetch_youtube_channel()](../src/aifeeder/ingest.py) enumerates channel videos via yt-dlp, pulls each transcript via youtube-transcript-api, chunks snippets into pseudo-paragraphs, returns `RawItem`s. New `fetch_for_source(source)` dispatcher in the same module branches on `source_type`. [refresh.py:209](../src/aifeeder/refresh.py#L209) now calls the dispatcher instead of `fetch_feed` directly. URL-detection in [web/writes.py.insert_source()](../src/aifeeder/web/writes.py) auto-sets `source_type='youtube_channel'` for youtube.com / youtu.be / m.youtube.com / www.youtube.com hosts — modal stays a single Name/URL/Why form with no toggle. Smoke-tested end-to-end on Struthless: 3 videos fetched, 3 verdicts at $0.0036 total (~12x cost of an RSS item — long transcripts are the cost driver), all three locked tone phrasings present ("Worth reading if…", "Worth a shot for X although Y", "Skip — this is mostly Z"), content page renders transcripts as 38–42 paragraphs.
+
+User confirmed two A-dimensions in advance via [`AskUserQuestion`](conversation/2026-05-22_4dac.md): (1) narrow scope (vs full); (2) same tone phrasings as RSS (vs separate "Worth watching" variant).
+
+Engineering choices made during implementation:
+
+- **`youtube-transcript-api` for transcripts, yt-dlp for channel enumeration** — two deps, but yt-dlp's automatic_captions URLs return rolling auto-caption JSON3/VTT that needs ~50 lines of fragile dedup logic. youtube-transcript-api (~50KB) hits YouTube's transcript endpoint directly and returns clean text in one call.
+- **URL-detection over an explicit `<select>` toggle** in the add-source modal. youtube.com / youtu.be / etc. hosts → `youtube_channel`; everything else → `rss`. Zero template change. If detection misfires on a real channel URL we'll add the toggle in phase-4-full.
+- **Channel-root URL drill-through.** Hitting `youtube.com/@Handle` returns a playlist of sub-playlists (Videos / Shorts / Live) rather than flat videos. The function detects `entries[0]._type == 'playlist'`, finds the sub-playlist whose title contains "videos", and re-extracts using `channel/{channel_id}/videos`. Tested with `/@Struthless` — works.
+- **Pseudo-paragraph chunking via `_transcript_to_paragraphs()`.** Auto-caption snippets are ~3–5 second chunks with no semantic breaks; rendering as one `<p>` is unreadable. Heuristic: split on either a > 2.5s gap between snippets OR a sentence boundary after the running chunk hits 600 chars. Result on Struthless: 36k-char transcript → 38 paragraphs averaging ~950 chars. Not perfect (auto-caption `>>` speaker markers leak through; some sentences split awkwardly) but dramatically better than a single blob. Phase-4-full could replace this with a smarter pass.
+- **Silent-skip videos without transcripts.** `TranscriptsDisabled` / `NoTranscriptFound` / `VideoUnavailable` from `youtube_transcript_api._errors` → continue the loop, no DB row created. Alternative was insert-with-empty-`raw_content` and let `summarize` mark `failure_class='content'` — would burn tokens for poor signal and clutter the DB.
+- **`per_source` cap doubles as the YouTube enumeration `limit`.** No separate YT cap — `fetch_for_source(source, limit=per_source)` plumbs through. So `aifeeder refresh --source-id N --per-source 3` enumerates exactly 3 videos, no waste.
+
+Known papercut to surface in state.md: yt-dlp first-fetch latency on a channel with ~100 videos is 30–60s (it's network-bound, not parallelizable trivially); a YT-heavy refresh will be noticeably slower than the all-RSS path.
+
+**User response:** pending (will surface on next browser-check / real-world-use round).
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 phase-4-narrow turn); state.md → *Next steps* (phase 4 narrow done; phase-4-full + real-world test now next); decisions.md → no new A-entry (the two A-dimensions resolved in `AskUserQuestion` confirmed pre-existing direction; "same tone as RSS" is consistent with the 2026-05-20 AI tone lock).
+
+---
+
+_Last updated: 2026-05-22 — Phase 4 narrow shipped. YouTube ingestion working end-to-end on Struthless at $0.0036/3 videos with locked AI tone preserved. Next: phase-4-full (iframe + chapters + real notes/favs schema) and/or real-world test._
+
+---
+
+## 2026-05-22 — Content-page iframe + home-card format icons
+
+User asked "how fast to add the youtube thumbnail and the iframe in the content blocks" — I flagged that **YT thumbnails on home cards is an A-reconsider** (decided against in 2026-05-21 per mindfulness paradox) and recommended shipping the iframe (already A-locked per 2026-05-20) and pausing on thumbnails. User confirmed: **no thumbnails**, **iframe in content block**, plus a third ask — **coloured SVG format-type icons** (video / audio / reading) next to the apple on home cards, picked from content format.
+
+Built end-to-end. Six engineering choices:
+
+- **Format dispatch from `source_type`, not `content_type_tag`.** source_type is structurally known (set by URL detection at ingest time); content_type_tag is AI-derived and drifts (the Struthless smoke test produced 'video', 'essay', and 'other' tags across three videos from the same channel). Mapping in [routes.py `_SOURCE_TYPE_TO_FORMAT`](../src/aifeeder/web/routes.py): `youtube_channel`→video; `rss`→reading; future `podcast`→audio. The 'audio' icon ships now even with no audio source defined — keeps the trio coherent.
+- **video_id derived from external_id (no schema change).** YouTube's `external_id` IS the video_id (set in [ingest.fetch_youtube_channel](../src/aifeeder/ingest.py)), so iframe URL construction is `https://www.youtube-nocookie.com/embed/{external_id}` — no new column needed. Added `i.external_id` + `src.source_type` to both [repo.py queries](../src/aifeeder/web/repo.py); `_enrich_item` exposes a typed `video_id` field that's `None` for non-YT items so the template can gate on truthiness.
+- **`youtube-nocookie.com` privacy-mode embeds.** Fits the mindfulness positioning — no tracking cookies, cleaner default. End-screen recommendations still appear at video end (no way to fully disable without paid Premium API); not worth gold-plating today.
+- **No autoplay.** Autoplay = TikTok-paradox red flag. iframe loads paused. User has to choose to start.
+- **iframe ABOVE the transcript, both visible.** Transcript stays scannable + searchable + note-attachable; iframe is for when you actually want to watch. Replaces neither. **Update (same day):** user asked to move the iframe *below* the purpose + key-points callout — same intent (iframe + transcript both visible) but reading order now: title → source-line → callout (the AI's pre-watch context: "is this worth my time?") → iframe (decide to watch) → transcript. Matches the mindfulness flow: pre-frame before press play.
+- **Format icon sits LEFT of the apple, smaller (22px vs 30px), slightly faded (0.85 opacity).** Apple is the verdict (foreground decision), format icon is metadata (background info). Hover bumps both to full opacity. Colors: video → `--accent-cool` (teal, "watch" = focused activity); audio → `--accent-warm` (sienna, "listen" = warm/ambient); reading → `--ink-soft` (muted brown, "read" = paper).
+
+Smoke test on running server: home page rendered 17 reading icons + 3 video icons (= 17 RSS items + 3 Struthless videos — correct distribution); YT content page (item 1476) rendered iframe with the right video_id (`j-TK_oWSg0g`) via `youtube-nocookie.com/embed/`; RSS content page (item 9) rendered zero iframes (correct gating on `item.video_id`).
+
+**User response:** pending (needs browser-check — particularly the icon color/sizing balance vs the apple).
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 iframe + format-icons turn); decisions.md → *2026-05-20 — YouTube playback iframe* (already-A-locked, executed today); decisions.md → *2026-05-21 — no thumbnails in v1* (still standing — thumbnails NOT added, mindfulness paradox preserved).
+
+---
+
+_Last updated: 2026-05-22 — Content-page iframe + home-card format icons shipped. YT videos now embed via youtube-nocookie.com; home cards show video/audio/reading icon next to apple based on source_type._
+
+---
+
+## 2026-05-22 — Home cards size to content (drop fixed row height + shape-text row span)
+
+User browser-checked the home grid post-format-icons and flagged that research-paper / essay cards (blue) were ~2x taller than their content needed, while the brown maybe-cards fit tightly. Root cause: [cards.css](../src/aifeeder/static/css/cards.css) had `grid-auto-rows: 220px` (fixed) + `.shape-text { grid-row: span 2 }` applied to `'research paper'` and `'essay'` content-type tags via [routes.py `_shape_for`](../src/aifeeder/web/routes.py), forcing those cards to 440px regardless of actual text length.
+
+**My choice:** `grid-auto-rows: auto` (rows size to tallest card in the row) + drop `.shape-text` row-span entirely + add `min-height: 180px` floor on `.card` (so very-short cards don't look squished). Kept `.card.shape-video { grid-column: span 2 }` for future video/interview items (wider, not taller). Kept `.shape-text .title { font-size: 1.3rem }` since the title-size bump on research-papers/essays is a visual-emphasis concern decoupled from card height — `_shape_for` still returns `'text'` for those tags, so the class is still in the DOM and the larger title still renders.
+
+**Alternatives considered:** (1) True per-card masonry — would need CSS columns (breaks left-to-right chronological reading order) or a JS lib (overkill for the current asymmetry). (2) Keep fixed-height rows but make shape-text dynamic from content length — adds complexity, less honest than just letting the grid breathe. (3) Cap with `max-height` on cards — would clip long reasons; the reason content is what makes a card worth rendering.
+
+**Tradeoff:** within a single row, cards still stretch to match the tallest card in that row (CSS Grid behavior). Across rows, heights vary. This isn't true masonry — if a row has one tall card and one short card, the short card still has trailing whitespace below its content. The 180px floor + most cards being similar-content-length should keep this from being visually loud; if it becomes a problem we'd need JS masonry.
+
+**User response:** pending (will surface on next browser-check).
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 card-sizing turn).
+
+---
+
+_Last updated: 2026-05-22 — Home cards now size to content. Fixed 220px row height dropped; `.shape-text` row-span gone. Research-paper / essay cards no longer 2x too tall._
+
+---
+
+## 2026-05-22 — Source-add ingest panel implementation
+
+A-shape locked in [decisions.md → 2026-05-22 Source-add ingest flow](decisions.md). Implementation choices:
+
+- **`POST /sources` success now returns the ingest panel** (not HX-Refresh:true). Instead of reloading immediately after creating the source, the response renders [partials/ingest_panel.html](../src/aifeeder/templates/partials/ingest_panel.html) into the same `#modal-slot` — preserves the modal's spatial continuity (user doesn't lose their cursor / context). The reload moves to the close-of-ingest-flow instead.
+- **`data-modal-needs-reload` marker on the modal backdrop.** The X / Esc / backdrop-click / Cancel buttons all route through the existing `closeModal()` JS in [main.js](../src/aifeeder/static/js/main.js). Added a check: if the modal's backdrop carries `data-modal-needs-reload`, `closeModal()` triggers `window.location.reload()` after clearing the slot. Both `ingest_panel.html` and `ingest_done.html` set this attribute. Means: whatever way the user dismisses the modal (deliberate Close or accidental Esc), the sidebar + feed update to reflect the new source. Alternative would have been HX-Refresh on every dismiss path — more route plumbing for the same outcome.
+- **`POST /sources/{id}/ingest` is sync `def`, not `async def`.** `process_source` is blocking (yt-dlp + OpenAI calls — 30–60s for 10-item YouTube batches). FastAPI runs sync routes in a thread pool, so the event loop stays unblocked without us needing `asyncio.to_thread`. Simpler than the async-wrapped alternative. All other routes in the file are async — this is the only sync one and the docstring calls it out.
+- **`process_source` reused from [refresh.py](../src/aifeeder/refresh.py) — not duplicated.** It already does fetch-dispatch + dedup-insert + summarize + per-item-commit + source-health updates, with `verbose=False` for non-CLI use. Web layer imports it directly; opens its own `connect()` connection, passes the source dict, gets back a `SourceResult`. Means the ingest panel inherits all the same failure semantics (`fetch_error` field, content-class skips, transient retries) — no behavior drift between CLI and web ingest.
+- **`count` bounds clamped server-side to [1, 100]** (mirrors the HTML `min`/`max` input attrs). HTML5 client-side validation isn't enough — never trust the client. Clamp via `max(1, min(count, 100))` rather than 400-erroring on out-of-range, since the input has clear bounds and the user's intent ("ingest a lot" or "ingest one") is preservable.
+- **Caveat that surfaced in smoke test (not changed):** for RSS, `process_source` dedup-inserts the *whole feed* (feedparser returns all available entries) and then summarizes only the first `per_source`. A "count=3" RSS ingest inserts ~20 items into `items` table but only summarizes 3; the remaining 17 sit as `pending` and would get summarized on the next `aifeeder refresh`. Existing behavior, not a regression — but it means "I picked 3" produces 3 feed-visible items + 17 latent pending items. Documented in state.md gotchas; would be a follow-on to cap `insert_new_items` if it becomes confusing.
+
+**User response:** pending (just shipped; will surface in browser-check round).
+
+**Refs:** decisions.md → *2026-05-22 — Source-add ingest flow: single-shot upfront count* (parent A-decision); ideas.md → *2026-05-22 Batched-continue ingest flow with running cost display* (deferred alternative); conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 ingest-flow turn).
+
+---
+
+_Last updated: 2026-05-22 — Source-add ingest panel shipped. Add → ingest panel (count input + spinner) → done panel (cost + close) → reload. process_source reused from refresh.py via sync def + FastAPI thread pool._
+
+---
+
+## 2026-05-22 — Source delete (red button on the source-edit modal)
+
+User asked for a "delete source" affordance: red button with a delete icon on the bottom-left of the source-edit modal. Built end-to-end.
+
+Engineering choices:
+
+- **Hard delete with explicit cascade in app code.** Schema has no `ON DELETE CASCADE` (FKs are enforced but not cascading per [schema.sql](../schema.sql)); `delete_source()` in [web/writes.py](../src/aifeeder/web/writes.py) deletes bottom-up: feedback → cost_log → summaries → items → sources, all inside `BEGIN`/`COMMIT` (manual transaction so all five succeed or none do). Alternative was soft-delete via a `deleted_at` column — would enable undo + preserve cost_log history, but adds a column + WHERE clause to every read path. For v1 single-user local, hard-delete is the simpler call. If "I deleted by accident" surfaces in real use, soft-delete becomes a v1.x refactor.
+- **HTMX `hx-confirm` for the destructive guard.** Browser-native `confirm()` dialog with the source name + "this cannot be undone" — cheapest mindful safeguard. Alternative was a two-step in-modal "are you sure?" panel; deferred unless the native prompt feels too jarring. The dialog text includes the source name so it can't be mindlessly accepted on the wrong source.
+- **`DELETE /sources/{id}` route returns 204 + `HX-Refresh: true`.** Matches the existing source-save pattern. Reload is the cleanest way to reflect the source's disappearance from the sidebar + any feed items that vanish.
+- **404 on missing source.** `writes.delete_source()` returns `False` when no row matched; the route raises HTTPException(404). Defensive — guards against double-click race conditions where two delete requests arrive in flight.
+- **Delete button rendered only in edit mode** (`{% if not is_add %}` in [partials/source_modal.html](../src/aifeeder/templates/partials/source_modal.html)). The add modal has no source to delete yet.
+- **Layout via `margin-right: auto` on the delete button**, not changing `.modal-actions` `justify-content`. This pushes delete to the left edge while cancel + save stay flush-right. Works without restructuring the action row; in add mode (no delete button) the cancel/save buttons stay correctly right-aligned. Used a soft red palette (`#B53A3A` border/text, `#F8E6E6` hover bg) tuned to the warm cream card aesthetic rather than a saturated `#FF0000`.
+- **New `trash()` macro in [_icons.html](../src/aifeeder/templates/_icons.html)** — single-path SVG (rectangle bin + lid + 2 vertical lines), `fill: currentColor` so the button color inherits.
+
+Smoke-tested end-to-end on running server: created a throwaway source (id 106) via POST /sources → confirmed delete button + hx-confirm + hx-delete attrs rendered in `/sources/106/edit` → `DELETE /sources/106` returned 204 + HX-Refresh:true → DB row gone (COUNT=0) → DELETE on nonexistent id returned 404. Then a cascade test: inserted source + 2 items + 1 summary + 1 cost_log + 1 feedback row via SQL → counts before delete: 1/2/1/1/1 → DELETE → counts after delete: 0/0/0/0/0. Cascade order works.
+
+**User response:** pending (will surface in browser-check).
+
+**Refs:** conversation → [2026-05-20_b670_ux-design.md](conversation/2026-05-20_b670_ux-design.md) (2026-05-22 delete-source turn); state.md → *Current focus* + *Out (schema ready, UI deferred)* (source-delete UI now removed from the "out" list).
+
+---
+
+_Last updated: 2026-05-22 — Source delete shipped. Red button bottom-left of edit modal, hx-confirm guard, hard-delete with explicit 5-step cascade in transaction, 204 + HX-Refresh on success. Verified cascade clears items / summaries / cost_log / feedback._

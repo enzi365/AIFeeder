@@ -28,10 +28,10 @@ def list_sources() -> list[dict[str, Any]]:
 
 
 def get_source(source_id: int) -> dict[str, Any] | None:
-    """Single source by id — for the source-edit modal."""
+    """Single source by id — for the source-edit modal + ingest-panel dispatch."""
     with closing(connect()) as conn:
         row = conn.execute(
-            "SELECT id, name, url, why FROM sources WHERE id = ?",
+            "SELECT id, name, url, why, source_type FROM sources WHERE id = ?",
             (source_id,),
         ).fetchone()
         return dict(row) if row else None
@@ -47,11 +47,12 @@ def list_feed_items() -> list[dict[str, Any]]:
         rows = conn.execute(
             """
             SELECT
-                i.id, i.title, i.url, i.raw_content, i.fetched_at,
+                i.id, i.title, i.url, i.raw_content, i.fetched_at, i.external_id,
                 s.relevance_verdict, s.confidence, s.relevance_reason,
                 s.content_type_tag, s.style_tag, s.purpose,
                 s.read_time_estimate, s.key_points_json,
-                src.name AS source_name, src.why AS source_why
+                src.name AS source_name, src.why AS source_why,
+                src.source_type AS source_type
             FROM items i
             JOIN summaries s ON s.item_id = i.id
             JOIN sources src ON src.id = i.source_id
@@ -68,11 +69,12 @@ def get_item(item_id: int) -> dict[str, Any] | None:
         row = conn.execute(
             """
             SELECT
-                i.id, i.title, i.url, i.raw_content, i.fetched_at,
+                i.id, i.title, i.url, i.raw_content, i.fetched_at, i.external_id,
                 s.relevance_verdict, s.confidence, s.relevance_reason,
                 s.content_type_tag, s.style_tag, s.purpose,
                 s.read_time_estimate, s.key_points_json,
-                src.name AS source_name, src.why AS source_why
+                src.name AS source_name, src.why AS source_why,
+                src.source_type AS source_type
             FROM items i
             JOIN summaries s ON s.item_id = i.id
             JOIN sources src ON src.id = i.source_id

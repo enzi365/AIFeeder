@@ -42,9 +42,15 @@
     });
 
     // ---------- modal close: Esc + backdrop click + Cancel / X button ----------
+    // If the backdrop carries `data-modal-needs-reload` (e.g. the ingest panel
+    // after a source was just created), reload the page on close so the sidebar
+    // reflects the new state. Otherwise just clear the slot.
     const closeModal = () => {
         const slot = document.getElementById('modal-slot');
+        const backdrop = slot && slot.querySelector('[data-modal-backdrop]');
+        const needsReload = backdrop && backdrop.hasAttribute('data-modal-needs-reload');
         if (slot) slot.innerHTML = '';
+        if (needsReload) window.location.reload();
     };
 
     document.addEventListener('click', (e) => {

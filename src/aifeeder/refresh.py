@@ -28,7 +28,7 @@ from typing import Literal
 
 from .ai import Summary, summarize
 from .db import connect
-from .ingest import fetch_feed, insert_new_items
+from .ingest import fetch_for_source, insert_new_items
 
 FailureClass = Literal["transient", "permanent", "content", "unknown"]
 
@@ -206,7 +206,7 @@ def process_source(
         print(f"Why: {source['why']}\n")
 
     try:
-        raw_items = fetch_feed(source["url"])
+        raw_items = fetch_for_source(source, limit=per_source)
     except Exception as e:
         msg = f"{type(e).__name__}: {e}"
         res.fetch_error = msg
