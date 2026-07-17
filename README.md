@@ -45,43 +45,29 @@ The user flow from cold start to reading a filtered item, in seven steps:
 
 **1. Start the app** — `aifeeder serve` → open `http://127.0.0.1:8000/home`.
 
-![Home grid](assets/home-grid.png)
-
 The home page shows a grid of cards: only items the AI flagged `yes` or `maybe`, each with a verdict indicator (whole apple = yes, bitten apple = maybe), a sage reason block + optional sienna caveat block, a format icon (video / audio / reading), and the content-type tag.
 
 **2. Add a source** — click the orange `+` button in the sidebar.
-
-![Add-source modal](assets/add-source-modal.png)
 
 Fill in **Name**, **URL** (any RSS feed or YouTube channel URL — the type is auto-detected from the host), and **Why** — the intent the AI will use to evaluate every item from this source.
 
 **3. Pick how many to ingest** — on save, the modal hands off to an ingest panel.
 
-![Ingest panel](assets/ingest-panel.png)
-
 Choose how many items to fetch + summarize *right now* (default 10, bounds [1, 100]). Click **Ingest** — a pulse animation runs during the fetch.
 
 **4. See the result** — the done panel shows item counts + actual cost.
-
-![Ingest done](assets/ingest-done.png)
 
 Close the modal → the page reloads and the new items appear in the feed.
 
 **5. Open an item** — click a card.
 
-![Content page (RSS)](assets/content-page-rss.png)
-
 The reader shows the title + source line, the AI's pre-frame block ("Purpose" + "Key points"), then the original content split into paragraphs. Highlight any phrase → a floating "Note from selection" button → write a note attached to the quoted passage (which stays highlighted on reload).
 
 **6. Open a YouTube item** — same shape, with an embedded `youtube-nocookie` iframe below the AI pre-frame, then the transcript paragraphs.
 
-![Content page (YouTube)](assets/content-page-youtube.png)
-
 The iframe sits *below* the pre-frame on purpose — frame the watch decision before pressing play.
 
 **7. Edit or delete a source** — click any source name in the sidebar.
-
-![Source edit modal with delete](assets/delete-confirm.png)
 
 The same modal opens in edit mode (URL + Why editable). A red **delete source** button (bottom-left) triggers a browser confirm dialog naming the source before issuing the destructive request, which cascades through all child tables in one transaction.
 
