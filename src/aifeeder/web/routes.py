@@ -18,6 +18,107 @@ from ..refresh import process_source
 from . import fakes, repo, writes
 from .app import app, templates
 
+_I18N = {
+    "en": {
+        "app_label": "The app",
+        "brand_line": "Mine the internet by your own intent",
+        "eyebrow": "For the feed-fatigued",
+        "hero_title": "Reclaim your attention.",
+        "hero_copy": "Mine-fully turns endless feeds into deliberate choices, surfacing what you asked for instead of what algorithms push.",
+        "demo_access": "Demo access",
+        "login_title": "Step out of the scroll.",
+        "login_copy": "Sign in to enter your quiet feed and decide what is worth your time today.",
+        "email": "Email",
+        "password": "Password",
+        "login_button": "Reclaim my feed",
+        "lang_label": "Language",
+        "english": "English",
+        "japanese": "日本語",
+        "sky_title": "What's worth your time today, Emma?",
+        "home_title": "Emma's Feed",
+        "empty_feed": "No items yet. Run",
+        "empty_feed_after": "to populate fixtures for UI development, or wire",
+        "empty_feed_end": "for real data.",
+        "home": "Home",
+        "library": "Library",
+        "favourites": "Favourites",
+        "notes": "Notes",
+        "sources": "Sources",
+        "no_sources": "No sources yet.",
+        "avatar_title": "Your reading persona",
+        "thought_1": "curious about AI",
+        "thought_2": "practitioner-led",
+        "thought_3": "no fluff",
+        "purpose": "Purpose",
+        "key_points": "Key points",
+        "back_to_feed": "back to feed",
+        "from": "from",
+        "open_original": "open original",
+        "no_content": "No content body available.",
+        "note_from_selection": "+ Note from selection",
+        "worth_my_time": "Worth my time",
+        "didnt_fit": "Didn't fit",
+        "add_note": "Add a note",
+        "circle_why_1": None,
+        "circle_why_2": None,
+    },
+    "ja": {
+        "app_label": "アプリ",
+        "brand_line": "自分の意図で、インターネットを掘り出す",
+        "eyebrow": "フィード疲れのあなたへ",
+        "hero_title": "注意を取り戻そう。",
+        "hero_copy": "Mine-fullyは、終わりのないフィードを意識的な選択へ変えます。アルゴリズム任せではなく、あなたが求めたものを届けます。",
+        "demo_access": "デモアクセス",
+        "login_title": "スクロールから抜け出そう。",
+        "login_copy": "静かなフィードに入り、今日あなたの時間に値するものを選びましょう。",
+        "email": "メール",
+        "password": "パスワード",
+        "login_button": "自分のフィードを取り戻す",
+        "lang_label": "言語",
+        "english": "English",
+        "japanese": "日本語",
+        "sky_title": "今日、あなたの時間に値するものは？ Emma",
+        "home_title": "Emmaのフィード",
+        "empty_feed": "まだ項目がありません。",
+        "empty_feed_after": "でUI開発用のサンプルを追加するか、",
+        "empty_feed_end": "で実データを取得してください。",
+        "home": "ホーム",
+        "library": "ライブラリ",
+        "favourites": "お気に入り",
+        "notes": "ノート",
+        "sources": "ソース",
+        "no_sources": "ソースはまだありません。",
+        "avatar_title": "あなたの読書ペルソナ",
+        "thought_1": "AIへの好奇心",
+        "thought_2": "実践者目線",
+        "thought_3": "余計な情報なし",
+        "purpose": "目的",
+        "key_points": "要点",
+        "back_to_feed": "フィードに戻る",
+        "from": "出典",
+        "open_original": "元記事を開く",
+        "no_content": "本文はありません。",
+        "note_from_selection": "+ 選択部分からノート",
+        "worth_my_time": "読む価値あり",
+        "didnt_fit": "合わなかった",
+        "add_note": "ノートを追加",
+        "circle_why_1": "実践的なAIエンジニアリングを追う。新しいLLM、動くコード例、実際に作っている人の洞察を優先。",
+        "circle_why_2": "機械学習とAIエージェントの新しい研究を把握する。数式中心より、作り手に役立つ応用・システム寄りの内容を優先。",
+    },
+}
+
+
+def _lang(request: Request) -> str:
+    return "ja" if request.query_params.get("lang") == "ja" else "en"
+
+
+def _text(lang: str) -> dict[str, str]:
+    return _I18N.get(lang, _I18N["en"])
+
+
+def _lang_suffix(lang: str) -> str:
+    return "?lang=ja" if lang == "ja" else ""
+
 
 # ---- accent palette mapping: 9 content_type_tags → 3 palette families ----
 # warm = orange/sienna; cool = teal/slate; neutral = umber/cream
@@ -121,17 +222,34 @@ def _render_paragraphs_with_highlights(raw_content: str, highlights: list[str]) 
 # ---------- pages ----------
 
 @app.get("/", response_class=HTMLResponse)
+async def landing(request: Request):
+    lang = _lang(request)
+    return templates.TemplateResponse(
+        request,
+        "landing.html",
+        {"lang": lang, "t": _text(lang), "lang_suffix": _lang_suffix(lang)},
+    )
+
+
+@app.get("/sky", response_class=HTMLResponse)
 async def loading(request: Request):
+    lang = _lang(request)
     sources = repo.list_sources()
     return templates.TemplateResponse(
         request,
         "loading.html",
-        {"sources": sources},
+        {
+            "sources": sources,
+            "lang": lang,
+            "t": _text(lang),
+            "next_url": f"/home{_lang_suffix(lang)}",
+        },
     )
 
 
 @app.get("/home", response_class=HTMLResponse)
 async def home(request: Request):
+    lang = _lang(request)
     user = repo.get_user()
     sources = repo.list_sources()
     items = [_enrich_item(i) for i in repo.list_feed_items()]
@@ -146,12 +264,16 @@ async def home(request: Request):
             "items": items,
             "sidebar_collapsed": False,
             "active_page": "home",
+            "lang": lang,
+            "t": _text(lang),
+            "lang_suffix": _lang_suffix(lang),
         },
     )
 
 
 @app.get("/content/{item_id}", response_class=HTMLResponse)
 async def content(request: Request, item_id: int):
+    lang = _lang(request)
     item = repo.get_item(item_id)
     if item is None:
         raise HTTPException(status_code=404, detail="Item not found")
@@ -175,6 +297,9 @@ async def content(request: Request, item_id: int):
             "notes": notes,
             "sidebar_collapsed": True,
             "active_page": "content",
+            "lang": lang,
+            "t": _text(lang),
+            "lang_suffix": _lang_suffix(lang),
         },
     )
 
@@ -183,6 +308,7 @@ async def content(request: Request, item_id: int):
 
 @app.get("/library", response_class=HTMLResponse)
 async def library_page(request: Request):
+    lang = _lang(request)
     user = repo.get_user()
     sources = repo.list_sources()
     for s in sources:
@@ -198,12 +324,16 @@ async def library_page(request: Request):
             "items": [],
             "sidebar_collapsed": False,
             "active_page": "library",
+            "lang": lang,
+            "t": _text(lang),
+            "lang_suffix": _lang_suffix(lang),
         },
     )
 
 
 @app.get("/favourites", response_class=HTMLResponse)
 async def favourites_page(request: Request):
+    lang = _lang(request)
     user = repo.get_user()
     sources = repo.list_sources()
     for s in sources:
@@ -221,12 +351,16 @@ async def favourites_page(request: Request):
             "items": items,
             "sidebar_collapsed": False,
             "active_page": "favourites",
+            "lang": lang,
+            "t": _text(lang),
+            "lang_suffix": _lang_suffix(lang),
         },
     )
 
 
 @app.get("/notes", response_class=HTMLResponse)
 async def notes_page(request: Request):
+    lang = _lang(request)
     user = repo.get_user()
     sources = repo.list_sources()
     for s in sources:
@@ -247,6 +381,9 @@ async def notes_page(request: Request):
             "note_rows": note_rows,
             "sidebar_collapsed": False,
             "active_page": "notes",
+            "lang": lang,
+            "t": _text(lang),
+            "lang_suffix": _lang_suffix(lang),
         },
     )
 

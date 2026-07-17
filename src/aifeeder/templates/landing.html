@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Mine-fully — {{ t.hero_title }}{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', path='/css/landing.css') }}">
+{% endblock %}
+
+{% block body %}
+<main class="landing-shell">
+    <section class="landing-visual" aria-label="A quiet moment away from endless feeds">
+        <img
+            src="{{ url_for('static', path='/img/agency-night-hero.png') }}"
+            alt="A young person sitting by a night window with their phone lowered, looking out over the city."
+        >
+        <div class="visual-shade"></div>
+        <div class="brand-lockup">
+            <span class="brand-label">{{ t.app_label }}</span>
+            <span class="brand-mark">Mine<span>-</span>fully</span>
+            <span class="brand-line">{{ t.brand_line }}</span>
+        </div>
+        <div class="hero-copy">
+            <p class="eyebrow">{{ t.eyebrow }}</p>
+            <h1>{{ t.hero_title }}</h1>
+            <p class="subcopy">
+                {{ t.hero_copy }}
+            </p>
+        </div>
+    </section>
+
+    <aside class="login-panel" aria-label="Login">
+        <div class="login-card">
+            <div class="language-toggle" aria-label="{{ t.lang_label }}">
+                <a class="{{ 'active' if lang == 'en' else '' }}" href="/">EN</a>
+                <a class="{{ 'active' if lang == 'ja' else '' }}" href="/?lang=ja">日本語</a>
+            </div>
+            <p class="login-kicker">{{ t.demo_access }}</p>
+            <h2>{{ t.login_title }}</h2>
+            <p class="login-copy">
+                {{ t.login_copy }}
+            </p>
+
+            <form class="login-form" action="/sky" method="get">
+                {% if lang == 'ja' %}
+                <input type="hidden" name="lang" value="ja">
+                {% endif %}
+                <label>
+                    <span>{{ t.email }}</span>
+                    <input type="email" value="emma@example.com" autocomplete="email">
+                </label>
+                <label>
+                    <span>{{ t.password }}</span>
+                    <input type="password" value="minefully" autocomplete="current-password">
+                </label>
+                <button type="submit">{{ t.login_button }}</button>
+            </form>
+        </div>
+    </aside>
+</main>
+{% endblock %}

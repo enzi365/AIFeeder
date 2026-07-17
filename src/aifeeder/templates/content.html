@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% import "_icons.html" as ico %}
-{% block title %}{{ item.title }} — AIFeeder{% endblock %}
+{% block title %}{{ item.title }} — Mine-fully{% endblock %}
 {% block extra_css %}
 <link rel="stylesheet" href="{{ url_for('static', path='/css/content.css') }}">
 {% endblock %}
@@ -10,25 +10,25 @@
     {% include "_sidebar.html" %}
     <main class="page">
         <article class="content-page">
-            <a href="/home" style="font-size: 0.85rem; color: var(--ink-faint); display: inline-block; margin-bottom: 1.5rem;">← back to feed</a>
+            <a href="/home{{ lang_suffix or '' }}" style="font-size: 0.85rem; color: var(--ink-faint); display: inline-block; margin-bottom: 1.5rem;">← {{ t.back_to_feed }}</a>
 
             <h1>{{ item.title or "[untitled]" }}</h1>
             <p class="content-source-line">
-                from <em>{{ item.source_name }}</em>
-                {% if item.url %} · <a href="{{ item.url }}" target="_blank" rel="noopener">open original ↗</a>{% endif %}
+                {{ t["from"] }} <em>{{ item.source_name }}</em>
+                {% if item.url %} · <a href="{{ item.url }}" target="_blank" rel="noopener">{{ t.open_original }} ↗</a>{% endif %}
             </p>
 
             {% if item.purpose or item.key_points %}
             <aside class="content-callout">
                 {% if item.purpose %}
                 <section>
-                    <h4>Purpose</h4>
+                    <h4>{{ t.purpose }}</h4>
                     <p>{{ item.purpose }}</p>
                 </section>
                 {% endif %}
                 {% if item.key_points %}
                 <section>
-                    <h4>Key points</h4>
+                    <h4>{{ t.key_points }}</h4>
                     <ul>
                         {% for kp in item.key_points %}
                         <li>{{ kp }}</li>
@@ -56,14 +56,14 @@
                     <p>{{ para | safe }}</p>
                     {% endfor %}
                 {% else %}
-                    <p class="no-content">No content body available. <a href="{{ item.url }}" target="_blank" rel="noopener">Open original ↗</a></p>
+                    <p class="no-content">{{ t.no_content }} <a href="{{ item.url }}" target="_blank" rel="noopener">{{ t.open_original }} ↗</a></p>
                 {% endif %}
             </div>
         </article>
 
         {# Floating selection popup — JS positions it near the current text selection #}
         <div id="selection-popup" data-item-id="{{ item.id }}">
-            <button type="button">+ Note from selection</button>
+            <button type="button">{{ t.note_from_selection }}</button>
         </div>
 
         {# Action stack (fixed bottom-right) #}
@@ -73,14 +73,14 @@
                         hx-post="/feedback/{{ item.id }}/up"
                         hx-target="#feedback-callout"
                         hx-swap="innerHTML"
-                        title="Worth my time">
+                        title="{{ t.worth_my_time }}">
                     {{ ico.thumbs_up() }}
                 </button>
                 <button class="action-btn" type="button"
                         hx-post="/feedback/{{ item.id }}/down"
                         hx-target="#feedback-callout"
                         hx-swap="innerHTML"
-                        title="Didn't fit">
+                        title="{{ t.didnt_fit }}">
                     {{ ico.thumbs_down() }}
                 </button>
             </div>
@@ -89,7 +89,7 @@
                     hx-get="/notes/{{ item.id }}/panel"
                     hx-target="#note-panel-slot"
                     hx-swap="innerHTML"
-                    title="Add a note">
+                    title="{{ t.add_note }}">
                 {{ ico.pen() }}
             </button>
 

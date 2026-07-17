@@ -16,21 +16,21 @@
     </div>
 
     <nav class="sidebar-nav">
-        <a class="nav-item {% if active_page == 'home' %}active{% endif %}" href="/home">
-            {{ ico.home() }}<span class="label">Home</span>
+        <a class="nav-item {% if active_page == 'home' %}active{% endif %}" href="/home{{ lang_suffix or '' }}">
+            {{ ico.home() }}<span class="label">{{ t.home if t is defined else "Home" }}</span>
         </a>
-        <a class="nav-item {% if active_page == 'library' %}active{% endif %}" href="/library">
-            {{ ico.books() }}<span class="label">Library</span>
+        <a class="nav-item {% if active_page == 'library' %}active{% endif %}" href="/library{{ lang_suffix or '' }}">
+            {{ ico.books() }}<span class="label">{{ t.library if t is defined else "Library" }}</span>
         </a>
-        <a class="nav-item {% if active_page == 'favourites' %}active{% endif %}" href="/favourites">
-            {{ ico.star(filled=false) }}<span class="label">Favourites</span>
+        <a class="nav-item {% if active_page == 'favourites' %}active{% endif %}" href="/favourites{{ lang_suffix or '' }}">
+            {{ ico.star(filled=false) }}<span class="label">{{ t.favourites if t is defined else "Favourites" }}</span>
         </a>
-        <a class="nav-item {% if active_page == 'notes' %}active{% endif %}" href="/notes">
-            {{ ico.notes() }}<span class="label">Notes</span>
+        <a class="nav-item {% if active_page == 'notes' %}active{% endif %}" href="/notes{{ lang_suffix or '' }}">
+            {{ ico.notes() }}<span class="label">{{ t.notes if t is defined else "Notes" }}</span>
         </a>
     </nav>
 
-    <h3>Sources</h3>
+    <h3>{{ t.sources if t is defined else "Sources" }}</h3>
     <div class="source-list">
         {% for s in sources %}
         <a class="source-row"
@@ -46,16 +46,16 @@
         </a>
         {% else %}
         <div class="empty-state" style="padding: 0.5rem 0.6rem; font-size: 0.85rem;">
-            No sources yet.
+            {{ t.no_sources if t is defined else "No sources yet." }}
         </div>
         {% endfor %}
     </div>
 
-    <div class="avatar-frame" title="Your reading persona">
+    <div class="avatar-frame" title="{{ t.avatar_title if t is defined else 'Your reading persona' }}">
         <div class="thought-bubbles">
-            <div class="bubble b1">curious about AI</div>
-            <div class="bubble b2">practitioner-led</div>
-            <div class="bubble b3">no fluff</div>
+            <div class="bubble b1">{{ t.thought_1 if t is defined else "curious about AI" }}</div>
+            <div class="bubble b2">{{ t.thought_2 if t is defined else "practitioner-led" }}</div>
+            <div class="bubble b3">{{ t.thought_3 if t is defined else "no fluff" }}</div>
         </div>
         <div class="avatar avatar-head"></div>
         <div class="avatar-body"></div>

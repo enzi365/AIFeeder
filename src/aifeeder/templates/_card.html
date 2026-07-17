@@ -1,5 +1,5 @@
 {% import "_icons.html" as ico %}
-<a class="card shape-{{ item.shape }} palette-{{ item.palette }}" href="/content/{{ item.id }}">
+<a class="card shape-{{ item.shape }} palette-{{ item.palette }}" href="/content/{{ item.id }}{{ lang_suffix or '' }}">
     <span class="accent-stripe" aria-hidden="true"></span>
 
     <h2 class="title">{{ item.title or "[untitled]" }}</h2>
@@ -26,13 +26,13 @@
     <div class="overlay" aria-hidden="true">
         {% if item.purpose %}
         <div>
-            <h4>Purpose</h4>
+            <h4>{{ t.purpose if t is defined else "Purpose" }}</h4>
             <p>{{ item.purpose }}</p>
         </div>
         {% endif %}
         {% if item.key_points %}
         <div>
-            <h4>Key points</h4>
+            <h4>{{ t.key_points if t is defined else "Key points" }}</h4>
             <ul>
                 {% for kp in item.key_points %}
                 <li>{{ kp }}</li>

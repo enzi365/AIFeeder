@@ -25,7 +25,9 @@
         });
         stage.addEventListener('click', () => {
             stage.classList.add('fly-out');
-            setTimeout(() => { window.location.href = '/home'; }, 720);
+            setTimeout(() => {
+                window.location.href = stage.dataset.nextUrl || '/home';
+            }, 720);
         });
     }
 
